@@ -2,9 +2,9 @@
 
 _You are your own getaway crew._
 
-## Play the development build
+## Play Echo Heist
 
-[Play the published game](https://deanlefor.com/echo-heist/). To play the local review build, open this checkout’s `index.html` and select **07 The Window**. The checked-in build supports offline play.
+All seven completed contracts are available in Contract Select. In **06 The Lockdown**, stealing the core opens a new route for a recorded Echo. In **07 The Window**, time the theft between your Echo crossing a shutter and stamping a relay. [Play Echo Heist](https://deanlefor.com/echo-heist/).
 
 ## Play on a Mac
 
