@@ -6,7 +6,7 @@ import { levels } from "../src/levels.ts";
 import { result } from "../src/save.ts";
 function go(s, target, done) {
   const input = new PointerRoute();
-  assert.ok(input.plan(s.level, s.player, target));
+  assert.ok(input.plan(s.level, s.player, target, s.phase));
   for (let i = 0; i < 900 && !s.won && !s.player.caught && input.target; i++) {
     s.step(input.next(s));
     if (done?.()) return;

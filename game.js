@@ -126,6 +126,7 @@
   };
   var score = {
     title: "The Big Score",
+    victory: { eyebrow: "Blackstar recovered", title: "The Big Score is yours." },
     site: "Parallax Treasury",
     item: "Blackstar diamond",
     brief: "Beat the pressure lock, divert the guard and pulse the inner vault. Get the Blackstar to the east lift.",
@@ -154,7 +155,56 @@
     par: 4,
     medalTimes: { bronze: 50, silver: 32, gold: 20 }
   };
-  var levels = [first, company, distraction, timing, score];
+  var lockdown = {
+    title: "The Lockdown",
+    site: "Vesper Reserve",
+    item: "Aegis Core",
+    brief: "Lift the core in the east vault. A and B seal on theft. Hatch H opens toward pad C, which powers the lower maintenance exit.",
+    hint: "From spawn, hold Right against H until 20s remain, then rewind. Leave your next Echo on A. Go straight to the core. A longer gallery stair also reaches pad C before theft.",
+    quip: "Management reviewed all three alibis. The handwriting matched.",
+    victory: { eyebrow: "Aegis Core recovered", title: "Lockdown breached." },
+    tiles: [
+      "#######################",
+      "##...###.SS#####...SS.#",
+      "#..............#......#",
+      "#.....##...##.........#",
+      "#.....######...#......#",
+      "#.C...######.###......#",
+      "#..........#.###......#",
+      "#.....##.###.####....##",
+      "#.....##.....####....##",
+      "##..##############.####",
+      "##.................####",
+      "#######################"
+    ],
+    start: p(3, 6),
+    exit: p(3, 8),
+    loot: p(17, 2),
+    bonus: p(21, 5),
+    gates: [
+      { ...gate(6, 2, 2, 4), label: "A", phase: "normal" },
+      { x: 15, y: 3, label: "B", kind: "automatic", phase: "normal" },
+      { ...gate(18, 9, 10, 6), label: "C", phase: "lockdown" },
+      { x: 6, y: 6, label: "H", kind: "automatic", phase: "lockdown" }
+    ],
+    patrol: { from: p(20, 4), to: p(20, 6), look: p(1, 0), bell: p(17, 5) },
+    lockdownOnLoot: true,
+    par: 3,
+    zones: [
+      { name: "WEST LOBBY", firstColumn: 1 },
+      { name: "CENTRAL GALLERY", firstColumn: 7 },
+      { name: "EAST VAULT", firstColumn: 16 }
+    ],
+    medalTimes: { bronze: 58, silver: 40, gold: 30 }
+  };
+  var levels = [
+    first,
+    company,
+    distraction,
+    timing,
+    score,
+    lockdown
+  ];
 
   // src/sim.ts
   var HZ = 60;
@@ -176,7 +226,7 @@
     y: Math.floor(a.y / UNIT)
   });
   var near = (a, b, r = 125) => Math.abs(a.x - (b.x + 0.5) * UNIT) <= r && Math.abs(a.y - (b.y + 0.5) * UNIT) <= r;
-  var atControl = (a, g) => near(a, g.source, g.kind === "pulse" ? 185 : 112);
+  var atControl = (a, g) => g.kind !== "automatic" && near(a, g.source, g.kind === "pulse" ? 185 : 112);
   var spawn = (level) => ({
     ...center(level.start),
     face: DOWN,
@@ -196,6 +246,7 @@
       __publicField(this, "trace", []);
       __publicField(this, "doors", []);
       __publicField(this, "pulses", []);
+      __publicField(this, "phase", "normal");
       __publicField(this, "loot", false);
       __publicField(this, "bonus", false);
       __publicField(this, "won", false);
@@ -220,7 +271,10 @@
         { length: this.tracks.length + 1 },
         () => spawn(this.level)
       );
-      this.doors = this.level.gates.map(() => false);
+      this.phase = "normal";
+      this.doors = this.level.gates.map(
+        (g) => g.kind === "automatic" && g.phase === "normal"
+      );
       this.pulses = this.level.gates.map(() => 0);
       this.guard = this.level.patrol ? center(this.level.patrol.from) : { x: 0, y: 0 };
       this.distracted = false;
@@ -314,24 +368,28 @@
       if (this.tick % 4 === 0 && this.player.walking)
         this.trace.push({ x: this.player.x, y: this.player.y });
       this.security();
+      const takingLoot = !this.player.caught && !!(input & USE) && !this.loot && near(this.player, this.level.loot, 205);
+      if (takingLoot && this.level.lockdownOnLoot) this.phase = "lockdown";
       this.level.gates.forEach((g, i) => {
-        const onPad = this.actors.some((a) => !a.caught && atControl(a, g));
-        if (g.kind === "pulse" && this.actors.some(
+        const enabled = !g.phase || g.phase === this.phase;
+        if (enabled && g.kind === "pulse" && this.actors.some(
           (a, n) => !a.caught && inputs[n] & USE && atControl(a, g)
         )) {
           this.pulses[i] = this.tick + 150;
           this.cues.push("pulse");
         }
         const held = this.doors[i] && this.actors.some((a) => !a.caught && near(a, g, UNIT / 2 + RADIUS));
-        const open = (g.kind === "plate" ? onPad : this.pulses[i] > this.tick) || held;
+        const powered = g.kind === "automatic" || (g.kind === "plate" ? this.actors.some((a) => !a.caught && atControl(a, g)) : this.pulses[i] > this.tick);
+        const open = enabled && powered || held;
         if (open !== this.doors[i]) this.cues.push(open ? "door" : "lock");
         this.doors[i] = open;
       });
       if (!this.player.caught) {
         if (input & USE) {
-          if (!this.loot && near(this.player, this.level.loot, 205)) {
+          if (takingLoot) {
             this.loot = true;
             this.cues.push("loot");
+            if (this.level.lockdownOnLoot) this.cues.push("lockdown");
           } else if (!this.bonus && near(this.player, this.level.bonus, 190)) {
             this.bonus = true;
             this.cues.push("bonus");
@@ -346,7 +404,7 @@
         }
       }
       this.activity.push(
-        this.level.gates.some((g) => atControl(this.player, g)) || !!(this.level.patrol && near(this.player, this.level.patrol.bell)) ? 2 : input & USE ? 3 : this.player.walking ? 1 : 0
+        this.level.gates.some((g) => atControl(this.player, g)) || !!(this.level.patrol && near(this.player, this.level.patrol.bell)) ? 2 : input & USE ? 3 : input & (UP | DOWN | LEFT | RIGHT) ? 1 : 0
       );
       this.tick++;
       this.elapsed++;
@@ -604,7 +662,10 @@
       g.line(x, y, x + (i % 2 ? -6 : 6), y, "#5e7487");
       g.line(x, y, x, y + (i < 2 ? 6 : -6), "#5e7487");
     }
-    const vaultX = l.gates.at(-1)?.x ?? 15;
+    for (const zone of l.zones ?? []) {
+      g.label(OX + zone.firstColumn * T, 8, zone.name, "#99adb7");
+    }
+    const vaultX = l.zones ? l.zones[l.zones.length - 1].firstColumn - 1 : l.gates.at(-1)?.x ?? 15;
     for (let r = 0; r < l.tiles.length; r++)
       for (let c = 0; c < l.tiles[r].length; c++) {
         const x = OX + c * T, y = OY + r * T, n = noise(c, r), gold = c > vaultX;
@@ -715,6 +776,7 @@
       g.rect(lamp.x - 7, lamp.y - 3, 14, 1, "#d4e2d4");
     }
     l.gates.forEach((gate2, i) => {
+      if (gate2.kind === "automatic") return;
       const a2 = pos(gate2.source), b = pos(gate2), col = i % 2 ? "#7a698e" : "#527a77";
       g.line(a2.x, a2.y, a2.x, b.y, col);
       g.line(a2.x, b.y, b.x, b.y, col);
@@ -783,6 +845,16 @@
       "..bccccb..",
       ".aaaaaaaa."
     ],
+    "Aegis Core": [
+      "...aaaa...",
+      ".aabbfbaa.",
+      "abffdddfba",
+      "abfdffdfba",
+      ".abdfcdba.",
+      "..abccba..",
+      "...abba...",
+      "....aa...."
+    ],
     "Blackstar diamond": [
       "...aaaa...",
       "..abffba..",
@@ -843,6 +915,15 @@
     draw(s2, frame2, reduced2) {
       const g = this.g, l = s2.level, t = reduced2 ? 0 : frame2;
       g.ctx.drawImage(this.cache, 0, 0);
+      if (s2.phase === "lockdown") {
+        g.rect(0, 0, W, H, "#c82b4018");
+        for (const gate2 of l.gates) {
+          const lamp = pos(gate2);
+          const intensity = Math.round(36 + 16 * Math.sin(t / 16));
+          g.glow(lamp.x, lamp.y - 14, 32, "#ff394d" + intensity.toString(16));
+          g.rect(lamp.x - 5, lamp.y - 13, 10, 2, "#ff8180");
+        }
+      }
       if (this.paths)
         s2.tracks.forEach((track, i) => {
           const color = ECHO_COLORS[i % ECHO_COLORS.length];
@@ -886,34 +967,38 @@
           g.rect(ex.x + i - 2, ex.y + j * 4 + Math.abs(i - 1), 1, 1, mint);
       tag(g, ex.x, ex.y + 13, "EXIT", "#84c7b8");
       l.gates.forEach((k, i) => {
-        const a = pos(k.source), b = pos(k), on = s2.actors.some((e) => !e.caught && atControl(e, k)), col = k.kind === "pulse" ? "#8ebdff" : violet;
-        if (on) {
-          g.glow(a.x, a.y, 34, "#bba1ff66");
-          const light2 = i % 2 ? "#c6a2f2" : "#82c8b3";
-          g.line(a.x, a.y, a.x, b.y, light2);
-          g.line(a.x, b.y, b.x, b.y, light2);
-          const seg = Math.abs(b.y - a.y) + Math.abs(b.x - a.x), progress = Math.floor(t * 0.8) % Math.max(seg, 1);
-          const sy = Math.min(progress, Math.abs(b.y - a.y)), sx = progress - sy;
-          g.rect(
-            a.x + sx * Math.sign(b.x - a.x) - 1,
-            a.y + sy * Math.sign(b.y - a.y) - 1,
-            3,
-            3,
-            "#c4e9d7"
+        const b = pos(k);
+        const label = k.label ?? String.fromCharCode(65 + i);
+        if (k.kind !== "automatic") {
+          const a = pos(k.source), on = s2.actors.some((e) => !e.caught && atControl(e, k)), col = k.kind === "pulse" ? "#8ebdff" : violet;
+          if (on && (!k.phase || k.phase === s2.phase)) {
+            g.glow(a.x, a.y, 34, "#bba1ff66");
+            const light2 = i % 2 ? "#c6a2f2" : "#82c8b3";
+            g.line(a.x, a.y, a.x, b.y, light2);
+            g.line(a.x, b.y, b.x, b.y, light2);
+            const seg = Math.abs(b.y - a.y) + Math.abs(b.x - a.x), progress = Math.floor(t * 0.8) % Math.max(seg, 1);
+            const sy = Math.min(progress, Math.abs(b.y - a.y)), sx = progress - sy;
+            g.rect(
+              a.x + sx * Math.sign(b.x - a.x) - 1,
+              a.y + sy * Math.sign(b.y - a.y) - 1,
+              3,
+              3,
+              "#c4e9d7"
+            );
+          }
+          g.rect(a.x - 10, a.y - 7, 20, 16, "#111725");
+          g.rect(a.x - 9, a.y - 8, 18, 14, on ? "#9880c6" : "#726086");
+          g.rect(a.x - 7, a.y - 6, 14, 10, "#352e46");
+          g.rect(a.x - 5, a.y - 5, 10, 8, on ? col : "#675375");
+          for (let j = 0; j < 3; j++) g.rect(a.x - 4, a.y - 3 + j * 2, 8, 1, col);
+          tag(
+            g,
+            a.x,
+            a.y + 11,
+            (k.kind === "pulse" ? "PULSE " : "PAD ") + label,
+            col
           );
         }
-        g.rect(a.x - 10, a.y - 7, 20, 16, "#111725");
-        g.rect(a.x - 9, a.y - 8, 18, 14, on ? "#9880c6" : "#726086");
-        g.rect(a.x - 7, a.y - 6, 14, 10, "#352e46");
-        g.rect(a.x - 5, a.y - 5, 10, 8, on ? col : "#675375");
-        for (let j = 0; j < 3; j++) g.rect(a.x - 4, a.y - 3 + j * 2, 8, 1, col);
-        tag(
-          g,
-          a.x,
-          a.y + 11,
-          (k.kind === "pulse" ? "PULSE " : "PAD ") + String.fromCharCode(65 + i),
-          col
-        );
         g.rect(b.x - 12, b.y - 12, 24, 24, "#13212c");
         for (let j = 0; j < 6; j++) {
           g.rect(b.x - 12 + j * 4, b.y - 12, 2, 2, amber);
@@ -945,13 +1030,13 @@
           g.rect(post + 1, b.y - 8, 2, 8, light);
         }
         g.glow(b.x, b.y, goal ? 21 : 26, goal ? "#69eab329" : "#f56d6b35");
-        if (!s2.doors[i])
+        if (k.label || !s2.doors[i])
           tag(
             g,
             b.x,
             b.y + 14,
-            l.gates.length === 1 ? "LOCKED" : "GATE " + String.fromCharCode(65 + i),
-            "#f3a29c"
+            k.kind === "automatic" ? (k.phase === "normal" ? "SHUTTER " : "HATCH ") + label : l.gates.length === 1 ? "LOCKED" : "GATE " + label,
+            s2.doors[i] ? mint : "#f3a29c"
           );
         if (k.kind === "pulse" && s2.doors[i])
           g.rect(
@@ -1084,10 +1169,13 @@
       this.target = void 0;
       this.use = false;
     }
-    plan(l, from, to) {
+    plan(l, from, to, phase = "normal") {
       this.cancel();
       if (l.tiles[to.y]?.[to.x] !== ".") return false;
       const first2 = tile(from), width = l.tiles[0].length, id = (v) => v.y * width + v.x;
+      const sealed = new Set(
+        l.gates.filter((g) => g.phase && g.phase !== phase && id(g) !== id(to)).map(id)
+      );
       const queue = [first2], parents = /* @__PURE__ */ new Map([[id(first2), null]]);
       for (let head = 0; head < queue.length; head++) {
         const a = queue[head];
@@ -1099,7 +1187,8 @@
           [0, -1]
         ]) {
           const b = { x: a.x + d[0], y: a.y + d[1] };
-          if (l.tiles[b.y]?.[b.x] !== "." || parents.has(id(b))) continue;
+          if (l.tiles[b.y]?.[b.x] !== "." || parents.has(id(b)) || sealed.has(id(b)))
+            continue;
           parents.set(id(b), a);
           queue.push(b);
         }
@@ -1112,7 +1201,7 @@
       this.use = [
         l.loot,
         l.bonus,
-        ...l.gates.filter((g) => g.kind === "pulse").map((g) => g.source)
+        ...l.gates.flatMap((g) => g.kind === "pulse" ? [g.source] : [])
       ].some((p2) => p2.x === to.x && p2.y === to.y);
       return true;
     }
@@ -1199,6 +1288,12 @@
       if (cue === "alarm" || cue === "caught") {
         this.tone(330, 190, 0.28, "sawtooth", 0.15);
         this.tone(280, 135, 0.32, "triangle", 0.16, 0.14);
+      }
+      if (cue === "lockdown") {
+        for (const delay of [0, 0.38]) {
+          this.tone(247, 494, 0.24, "sawtooth", 0.11, delay);
+          this.tone(494, 330, 0.12, "square", 0.055, delay + 0.24);
+        }
       }
       if (cue === "pulse") this.tone(600, 1100, 0.22, "sine", 0.16);
       if (cue === "empty") this.tone(95, 90, 0.07, "sine", 0.12);
@@ -1681,7 +1776,7 @@
       };
       list.append(b);
     });
-    text("completed", Object.keys(save.records).length + " / 5");
+    text("completed", Object.keys(save.records).length + " / " + levels.length);
     const best = save.records[index];
     el("medal-times").innerHTML = tiers.map((tier, i) => {
       const next = (best?.medal ?? 0) === i;
@@ -1710,7 +1805,7 @@
     text("facility", s.level.site);
     text("cam", digits(i + 1));
     text("filecode", "EH\u2013" + digits(i + 1));
-    text("contract", "Contract " + digits(i + 1) + " / 05");
+    text("contract", "Contract " + digits(i + 1) + " / " + digits(levels.length));
     text("title", s.level.title);
     text("brief", s.level.brief);
     text("item", s.level.item);
@@ -1734,6 +1829,12 @@
     if (near(s.player, s.level.bonus, 190) && !s.bonus)
       return "Press E to pocket the violet bonus intel.";
     const g = s.level.gates.find((g2) => atControl(s.player, g2));
+    if (g?.phase && g.phase !== s.phase)
+      return s.phase === "normal" ? "Pad C armed. Leave an Echo here to power maintenance on theft." : "The entrance is sealed. Follow maintenance to EXIT.";
+    if (s.level.lockdownOnLoot && s.phase === "normal") {
+      const hatch = s.level.gates.find((g2) => g2.kind === "automatic" && g2.phase === "lockdown");
+      if (hatch && near(s.player, hatch, 230)) return "Keep pushing into H to record movement. Rewind at 20s left.";
+    }
     if (g?.kind === "pulse") {
       const remaining = s.pulses[s.level.gates.indexOf(g)] - s.tick;
       if (remaining > 0)
@@ -1743,6 +1844,7 @@
       return g.kind === "pulse" ? "Tap E to send a 2.5-second pulse. Rewind to replay it." : "Pad engaged. Press R here to leave an Echo holding it.";
     if (s.level.patrol && near(s.player, s.level.patrol.bell))
       return "Buzzer active. Rewind here to keep the sentry distracted.";
+    if (s.phase === "lockdown") return "Gate C is on the lower maintenance route. Keep pad C occupied and return west to EXIT.";
     if (s.loot) return "Loot secured. Reach the green EXIT pad.";
     if (!s.started && s.tracks.length)
       return "Echoes synced. Move or press Space to start the crew.";
@@ -1761,7 +1863,7 @@
     if (!mode) return;
     if (mode === "won") {
       const r = result(s), best = save.records[index], final = index === levels.length - 1;
-      o.innerHTML = '<div class="seal">\u25C6</div><div class="eyebrow">' + (final ? "Blackstar recovered" : "Extraction confirmed") + "</div><h3>" + (final ? "The Big Score is yours." : "Clean getaway.") + "</h3><p>" + s.level.quip + '</p><div class="receipt">' + (r.medal ? medals[r.medal] + " medal" : "Contract cleared") + " \xB7 " + r.loops + " loops \xB7 " + (r.ticks / 60).toFixed(2) + 's</div><div class="scoreline">' + (newRecord ? "Personal best" : "Best " + medals[best.medal] + " \xB7 " + best.loops + " loops \xB7 " + (best.ticks / 60).toFixed(2) + "s") + " \xB7 Intel " + (r.bonus ? "secured" : "missed") + '</div><div class="choices"><button class="primary" id="next">' + (final ? "Back to first contract" : "Next contract \u2192") + '</button><button id="replay">Replay</button></div>';
+      o.innerHTML = '<div class="seal">\u25C6</div><div class="eyebrow">' + (s.level.victory?.eyebrow ?? "Extraction confirmed") + "</div><h3>" + (s.level.victory?.title ?? "Clean getaway.") + "</h3><p>" + s.level.quip + '</p><div class="receipt">' + (r.medal ? medals[r.medal] + " medal" : "Contract cleared") + " \xB7 " + r.loops + " loops \xB7 " + (r.ticks / 60).toFixed(2) + 's</div><div class="scoreline">' + (newRecord ? "Personal best" : "Best " + medals[best.medal] + " \xB7 " + best.loops + " loops \xB7 " + (best.ticks / 60).toFixed(2) + "s") + " \xB7 Intel " + (r.bonus ? "secured" : "missed") + '</div><div class="choices"><button class="primary" id="next">' + (final ? "Back to first contract" : "Next contract \u2192") + '</button><button id="replay">Replay</button></div>';
       el("next").onclick = () => switchTo((index + 1) % levels.length);
       el("replay").onclick = () => switchTo(index);
     } else if (mode === "caught") {
@@ -1779,6 +1881,9 @@
     if (el("time").innerHTML !== value) el("time").innerHTML = value;
     text("loop", digits(s.tracks.length + 1));
     text("echoes", digits(s.tracks.length));
+    el("security-phase").hidden = !s.level.lockdownOnLoot;
+    text("security-phase", s.phase === "normal" ? "Normal security" : "Lockdown");
+    el("security-phase").classList.toggle("alert", s.phase === "lockdown");
     text("looted", s.loot ? "\u2713" : "");
     text("bonus", s.bonus ? "Secured \u2713" : "Optional");
     const rec = s.paused ? "Paused" : s.won ? "Archived" : s.player.caught ? "Stopped" : s.started ? "Recording" : "Standby";
@@ -1851,7 +1956,7 @@
       if (cue === "rewind" || cue === "retry" || cue === "undo") {
         route.cancel();
         feed.flash = 1;
-        feed.doors.fill(0);
+        feed.doors = s.doors.map(Number);
         timeline.lastTick = -1;
         say(
           cue === "rewind" ? "Echo " + digits(s.tracks.length) + " recorded. Move to run the tape." : cue === "undo" ? "Last Echo erased. Remaining tapes are ready." : "Loop reset. Your crew is ready.",
@@ -1864,6 +1969,7 @@
           cue === "loot" ? "Loot secured. Move to the green EXIT pad." : "Bonus intel secured."
         );
       }
+      if (cue === "lockdown") say("LOCKDOWN \xB7 A/B sealing. H released. Hold C for maintenance extraction.", 4);
       if (cue === "clear") {
         const r = result(s);
         newRecord = better(r, save.records[index]);
@@ -2018,7 +2124,7 @@
       (e.clientX - bounds.left) / bounds.width,
       (e.clientY - bounds.top) / bounds.height
     );
-    if (route.plan(s.level, s.player, target)) s.started = true;
+    if (route.plan(s.level, s.player, target, s.phase)) s.started = true;
     else say("Choose a floor tile or device.", 1);
   });
   el("paths").onclick = () => {

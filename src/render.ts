@@ -59,7 +59,12 @@ function surface(g: Pixels, l: Level) {
     g.line(x, y, x + (i % 2 ? -6 : 6), y, "#5e7487");
     g.line(x, y, x, y + (i < 2 ? 6 : -6), "#5e7487");
   }
-  const vaultX = l.gates.at(-1)?.x ?? 15;
+  for (const zone of l.zones ?? []) {
+    g.label(OX + zone.firstColumn * T, 8, zone.name, "#99adb7");
+  }
+  const vaultX = l.zones
+    ? l.zones[l.zones.length - 1].firstColumn - 1
+    : (l.gates.at(-1)?.x ?? 15);
   for (let r = 0; r < l.tiles.length; r++)
     for (let c = 0; c < l.tiles[r].length; c++) {
       const x = OX + c * T,
@@ -182,6 +187,7 @@ function surface(g: Pixels, l: Level) {
     g.rect(lamp.x - 7, lamp.y - 3, 14, 1, "#d4e2d4");
   }
   l.gates.forEach((gate, i) => {
+    if (gate.kind === "automatic") return;
     const a = pos(gate.source),
       b = pos(gate),
       col = i % 2 ? "#7a698e" : "#527a77";
@@ -256,6 +262,16 @@ const trophies: Record<string, string[]> = {
     "..bccccb..",
     ".aaaaaaaa.",
   ],
+  "Aegis Core": [
+    "...aaaa...",
+    ".aabbfbaa.",
+    "abffdddfba",
+    "abfdffdfba",
+    ".abdfcdba.",
+    "..abccba..",
+    "...abba...",
+    "....aa....",
+  ],
   "Blackstar diamond": [
     "...aaaa...",
     "..abffba..",
@@ -318,6 +334,15 @@ export class Feed {
       l = s.level,
       t = reduced ? 0 : frame;
     g.ctx.drawImage(this.cache, 0, 0);
+    if (s.phase === "lockdown") {
+      g.rect(0, 0, W, H, "#c82b4018");
+      for (const gate of l.gates) {
+        const lamp = pos(gate);
+        const intensity = Math.round(36 + 16 * Math.sin(t / 16));
+        g.glow(lamp.x, lamp.y - 14, 32, "#ff394d" + intensity.toString(16));
+        g.rect(lamp.x - 5, lamp.y - 13, 10, 2, "#ff8180");
+      }
+    }
     if (this.paths)
       s.tracks.forEach((track, i) => {
         const color = ECHO_COLORS[i % ECHO_COLORS.length];
@@ -362,39 +387,42 @@ export class Feed {
         g.rect(ex.x + i - 2, ex.y + j * 4 + Math.abs(i - 1), 1, 1, mint);
     tag(g, ex.x, ex.y + 13, "EXIT", "#84c7b8");
     l.gates.forEach((k, i) => {
-      const a = pos(k.source),
-        b = pos(k),
-        on = s.actors.some((e) => !e.caught && atControl(e, k)),
-        col = k.kind === "pulse" ? "#8ebdff" : violet;
-      if (on) {
-        g.glow(a.x, a.y, 34, "#bba1ff66");
-        const light = i % 2 ? "#c6a2f2" : "#82c8b3";
-        g.line(a.x, a.y, a.x, b.y, light);
-        g.line(a.x, b.y, b.x, b.y, light);
-        const seg = Math.abs(b.y - a.y) + Math.abs(b.x - a.x),
-          progress = Math.floor(t * 0.8) % Math.max(seg, 1);
-        const sy = Math.min(progress, Math.abs(b.y - a.y)),
-          sx = progress - sy;
-        g.rect(
-          a.x + sx * Math.sign(b.x - a.x) - 1,
-          a.y + sy * Math.sign(b.y - a.y) - 1,
-          3,
-          3,
-          "#c4e9d7",
+      const b = pos(k);
+      const label = k.label ?? String.fromCharCode(65 + i);
+      if (k.kind !== "automatic") {
+        const a = pos(k.source),
+          on = s.actors.some((e) => !e.caught && atControl(e, k)),
+          col = k.kind === "pulse" ? "#8ebdff" : violet;
+        if (on && (!k.phase || k.phase === s.phase)) {
+          g.glow(a.x, a.y, 34, "#bba1ff66");
+          const light = i % 2 ? "#c6a2f2" : "#82c8b3";
+          g.line(a.x, a.y, a.x, b.y, light);
+          g.line(a.x, b.y, b.x, b.y, light);
+          const seg = Math.abs(b.y - a.y) + Math.abs(b.x - a.x),
+            progress = Math.floor(t * 0.8) % Math.max(seg, 1);
+          const sy = Math.min(progress, Math.abs(b.y - a.y)),
+            sx = progress - sy;
+          g.rect(
+            a.x + sx * Math.sign(b.x - a.x) - 1,
+            a.y + sy * Math.sign(b.y - a.y) - 1,
+            3,
+            3,
+            "#c4e9d7",
+          );
+        }
+        g.rect(a.x - 10, a.y - 7, 20, 16, "#111725");
+        g.rect(a.x - 9, a.y - 8, 18, 14, on ? "#9880c6" : "#726086");
+        g.rect(a.x - 7, a.y - 6, 14, 10, "#352e46");
+        g.rect(a.x - 5, a.y - 5, 10, 8, on ? col : "#675375");
+        for (let j = 0; j < 3; j++) g.rect(a.x - 4, a.y - 3 + j * 2, 8, 1, col);
+        tag(
+          g,
+          a.x,
+          a.y + 11,
+          (k.kind === "pulse" ? "PULSE " : "PAD ") + label,
+          col,
         );
       }
-      g.rect(a.x - 10, a.y - 7, 20, 16, "#111725");
-      g.rect(a.x - 9, a.y - 8, 18, 14, on ? "#9880c6" : "#726086");
-      g.rect(a.x - 7, a.y - 6, 14, 10, "#352e46");
-      g.rect(a.x - 5, a.y - 5, 10, 8, on ? col : "#675375");
-      for (let j = 0; j < 3; j++) g.rect(a.x - 4, a.y - 3 + j * 2, 8, 1, col);
-      tag(
-        g,
-        a.x,
-        a.y + 11,
-        (k.kind === "pulse" ? "PULSE " : "PAD ") + String.fromCharCode(65 + i),
-        col,
-      );
       g.rect(b.x - 12, b.y - 12, 24, 24, "#13212c");
       for (let j = 0; j < 6; j++) {
         g.rect(b.x - 12 + j * 4, b.y - 12, 2, 2, amber);
@@ -428,15 +456,17 @@ export class Feed {
         g.rect(post + 1, b.y - 8, 2, 8, light);
       }
       g.glow(b.x, b.y, goal ? 21 : 26, goal ? "#69eab329" : "#f56d6b35");
-      if (!s.doors[i])
+      if (k.label || !s.doors[i])
         tag(
           g,
           b.x,
           b.y + 14,
-          l.gates.length === 1
-            ? "LOCKED"
-            : "GATE " + String.fromCharCode(65 + i),
-          "#f3a29c",
+          k.kind === "automatic"
+            ? (k.phase === "normal" ? "SHUTTER " : "HATCH ") + label
+            : l.gates.length === 1
+              ? "LOCKED"
+              : "GATE " + label,
+          s.doors[i] ? mint : "#f3a29c",
         );
       if (k.kind === "pulse" && s.doors[i])
         g.rect(

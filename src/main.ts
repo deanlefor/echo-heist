@@ -106,7 +106,7 @@ function jobs() {
     };
     list.append(b);
   });
-  text("completed", Object.keys(save.records).length + " / 5");
+  text("completed", Object.keys(save.records).length + " / " + levels.length);
   const best = save.records[index];
   el("medal-times").innerHTML = tiers.map((tier, i) => {
     const next = (best?.medal ?? 0) === i;
@@ -136,7 +136,7 @@ function switchTo(i: number) {
   text("facility", s.level.site);
   text("cam", digits(i + 1));
   text("filecode", "EH–" + digits(i + 1));
-  text("contract", "Contract " + digits(i + 1) + " / 05");
+  text("contract", "Contract " + digits(i + 1) + " / " + digits(levels.length));
   text("title", s.level.title);
   text("brief", s.level.brief);
   text("item", s.level.item);
@@ -167,6 +167,12 @@ function contextual() {
   if (near(s.player, s.level.bonus, 190) && !s.bonus)
     return "Press E to pocket the violet bonus intel.";
   const g = s.level.gates.find((g) => atControl(s.player, g));
+  if (g?.phase && g.phase !== s.phase)
+    return s.phase === "normal" ? "Pad C armed. Leave an Echo here to power maintenance on theft." : "The entrance is sealed. Follow maintenance to EXIT.";
+  if (s.level.lockdownOnLoot && s.phase === "normal") {
+    const hatch = s.level.gates.find(g => g.kind === "automatic" && g.phase === "lockdown");
+    if (hatch && near(s.player, hatch, 230)) return "Keep pushing into H to record movement. Rewind at 20s left.";
+  }
   if (g?.kind === "pulse") {
     const remaining = s.pulses[s.level.gates.indexOf(g)] - s.tick;
     if (remaining > 0)
@@ -182,6 +188,7 @@ function contextual() {
       : "Pad engaged. Press R here to leave an Echo holding it.";
   if (s.level.patrol && near(s.player, s.level.patrol.bell))
     return "Buzzer active. Rewind here to keep the sentry distracted.";
+  if (s.phase === "lockdown") return "Gate C is on the lower maintenance route. Keep pad C occupied and return west to EXIT.";
   if (s.loot) return "Loot secured. Reach the green EXIT pad.";
   if (!s.started && s.tracks.length)
     return "Echoes synced. Move or press Space to start the crew.";
@@ -212,9 +219,9 @@ function overlay() {
       final = index === levels.length - 1;
     o.innerHTML =
       '<div class="seal">◆</div><div class="eyebrow">' +
-      (final ? "Blackstar recovered" : "Extraction confirmed") +
+      (s.level.victory?.eyebrow ?? "Extraction confirmed") +
       "</div><h3>" +
-      (final ? "The Big Score is yours." : "Clean getaway.") +
+      (s.level.victory?.title ?? "Clean getaway.") +
       "</h3><p>" +
       s.level.quip +
       '</p><div class="receipt">' +
@@ -262,6 +269,9 @@ function hud() {
   if (el("time").innerHTML !== value) el("time").innerHTML = value;
   text("loop", digits(s.tracks.length + 1));
   text("echoes", digits(s.tracks.length));
+  el("security-phase").hidden = !s.level.lockdownOnLoot;
+  text("security-phase", s.phase === "normal" ? "Normal security" : "Lockdown");
+  el("security-phase").classList.toggle("alert", s.phase === "lockdown");
   text("looted", s.loot ? "✓" : "");
   text("bonus", s.bonus ? "Secured ✓" : "Optional");
   const rec = s.paused
@@ -351,7 +361,7 @@ function effects() {
     if (cue === "rewind" || cue === "retry" || cue === "undo") {
       route.cancel();
       feed.flash = 1;
-      feed.doors.fill(0);
+      feed.doors = s.doors.map(Number);
       timeline.lastTick = -1;
       say(
         cue === "rewind"
@@ -372,6 +382,7 @@ function effects() {
           : "Bonus intel secured.",
       );
     }
+    if (cue === "lockdown") say("LOCKDOWN · A/B sealing. H released. Hold C for maintenance extraction.", 4);
     if (cue === "clear") {
       const r = result(s);
       newRecord = better(r, save.records[index]);
@@ -531,7 +542,7 @@ board.addEventListener("pointerdown", (e) => {
     (e.clientX - bounds.left) / bounds.width,
     (e.clientY - bounds.top) / bounds.height,
   );
-  if (route.plan(s.level, s.player, target)) s.started = true;
+  if (route.plan(s.level, s.player, target, s.phase)) s.started = true;
   else say("Choose a floor tile or device.", 1);
 });
 el("paths").onclick = () => {

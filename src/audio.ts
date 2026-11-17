@@ -75,6 +75,12 @@ export class AudioDeck {
       this.tone(330, 190, 0.28, "sawtooth", 0.15);
       this.tone(280, 135, 0.32, "triangle", 0.16, 0.14);
     }
+    if (cue === "lockdown") {
+      for (const delay of [0, 0.38]) {
+        this.tone(247, 494, 0.24, "sawtooth", 0.11, delay);
+        this.tone(494, 330, 0.12, "square", 0.055, delay + 0.24);
+      }
+    }
     if (cue === "pulse") this.tone(600, 1100, 0.22, "sine", 0.16);
     if (cue === "empty") this.tone(95, 90, 0.07, "sine", 0.12);
   }

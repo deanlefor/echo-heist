@@ -1,5 +1,9 @@
 export type Point = { x: number; y: number };
-export type Gate = Point & { kind: "plate" | "pulse"; source: Point };
+export type SecurityPhase = "normal" | "lockdown";
+export type Gate = Point & { label?: string; phase?: SecurityPhase } & (
+    | { kind: "plate" | "pulse"; source: Point }
+    | { kind: "automatic"; phase: SecurityPhase; source?: never }
+  );
 export interface Patrol {
   from: Point;
   to: Point;
@@ -20,6 +24,9 @@ export interface Level {
   bonus: Point;
   gates: Gate[];
   patrol?: Patrol;
+  lockdownOnLoot?: boolean;
+  zones?: { name: string; firstColumn: number }[];
+  victory?: { eyebrow: string; title: string };
   par: number;
   medalTimes: { bronze: number; silver: number; gold: number };
 }
@@ -29,7 +36,7 @@ export const gate = (
   y: number,
   sx: number,
   sy: number,
-  kind: Gate["kind"] = "plate",
+  kind: "plate" | "pulse" = "plate",
 ): Gate => ({ x, y, source: p(sx, sy), kind });
 export const company: Level = {
   title: "Three’s Company",
@@ -153,6 +160,7 @@ export const timing: Level = {
 };
 export const score: Level = {
   title: "The Big Score",
+  victory: { eyebrow: "Blackstar recovered", title: "The Big Score is yours." },
   site: "Parallax Treasury",
   item: "Blackstar diamond",
   brief:
@@ -182,4 +190,54 @@ export const score: Level = {
   par: 4,
   medalTimes: { bronze: 50, silver: 32, gold: 20 },
 };
-export const levels: Level[] = [first, company, distraction, timing, score];
+export const lockdown: Level = {
+  title: "The Lockdown",
+  site: "Vesper Reserve",
+  item: "Aegis Core",
+  brief:
+    "Lift the core in the east vault. A and B seal on theft. Hatch H opens toward pad C, which powers the lower maintenance exit.",
+  hint: "From spawn, hold Right against H until 20s remain, then rewind. Leave your next Echo on A. Go straight to the core. A longer gallery stair also reaches pad C before theft.",
+  quip: "Management reviewed all three alibis. The handwriting matched.",
+  victory: { eyebrow: "Aegis Core recovered", title: "Lockdown breached." },
+  tiles: [
+    "#######################",
+    "##...###.SS#####...SS.#",
+    "#..............#......#",
+    "#.....##...##.........#",
+    "#.....######...#......#",
+    "#.C...######.###......#",
+    "#..........#.###......#",
+    "#.....##.###.####....##",
+    "#.....##.....####....##",
+    "##..##############.####",
+    "##.................####",
+    "#######################",
+  ],
+  start: p(3, 6),
+  exit: p(3, 8),
+  loot: p(17, 2),
+  bonus: p(21, 5),
+  gates: [
+    { ...gate(6, 2, 2, 4), label: "A", phase: "normal" },
+    { x: 15, y: 3, label: "B", kind: "automatic", phase: "normal" },
+    { ...gate(18, 9, 10, 6), label: "C", phase: "lockdown" },
+    { x: 6, y: 6, label: "H", kind: "automatic", phase: "lockdown" },
+  ],
+  patrol: { from: p(20, 4), to: p(20, 6), look: p(1, 0), bell: p(17, 5) },
+  lockdownOnLoot: true,
+  par: 3,
+  zones: [
+    { name: "WEST LOBBY", firstColumn: 1 },
+    { name: "CENTRAL GALLERY", firstColumn: 7 },
+    { name: "EAST VAULT", firstColumn: 16 },
+  ],
+  medalTimes: { bronze: 58, silver: 40, gold: 30 },
+};
+export const levels: Level[] = [
+  first,
+  company,
+  distraction,
+  timing,
+  score,
+  lockdown,
+];

@@ -934,3 +934,18 @@ dialog .primary {
   min-width: 0;
   flex: 1;
 }
+
+#security-phase {
+  padding: 3px 6px;
+  border: 1px solid #53615d;
+  border-radius: 3px;
+  color: #a8d4c4;
+}
+#security-phase.alert {
+  background: #4a232f;
+  border-color: #cd727f;
+  color: #ffd7d0;
+}
+@media (max-width: 460px) {
+  .feed-title:has(#security-phase:not([hidden])) .channel { display: none; }
+}

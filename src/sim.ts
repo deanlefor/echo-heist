@@ -1,4 +1,4 @@
-import type { Level, Point, Patrol, Gate } from "./levels.ts";
+import type { Level, Point, Patrol, Gate, SecurityPhase } from "./levels.ts";
 export const HZ = 60,
   LIMIT = 30 * HZ,
   UNIT = 240,
@@ -21,10 +21,11 @@ export const near = (a: Point, b: Point, r = 125) =>
   Math.abs(a.x - (b.x + 0.5) * UNIT) <= r &&
   Math.abs(a.y - (b.y + 0.5) * UNIT) <= r;
 export const atControl = (a: Point, g: Gate) =>
-  near(a, g.source, g.kind === "pulse" ? 185 : 112);
+  g.kind !== "automatic" && near(a, g.source, g.kind === "pulse" ? 185 : 112);
 export type Actor = Point & { face: number; walking: boolean; caught: boolean };
 export type Track = { commands: number[]; activity: number[]; trace: Point[] };
 export type Cue =
+  | "lockdown"
   | "door"
   | "lock"
   | "pulse"
@@ -55,6 +56,7 @@ export class Heist {
   trace: Point[] = [];
   doors: boolean[] = [];
   pulses: number[] = [];
+  phase: SecurityPhase = "normal";
   loot = false;
   bonus = false;
   won = false;
@@ -79,7 +81,10 @@ export class Heist {
     this.actors = Array.from({ length: this.tracks.length + 1 }, () =>
       spawn(this.level),
     );
-    this.doors = this.level.gates.map(() => false);
+    this.phase = "normal";
+    this.doors = this.level.gates.map(
+      (g) => g.kind === "automatic" && g.phase === "normal",
+    );
     this.pulses = this.level.gates.map(() => 0);
     this.guard = this.level.patrol
       ? center(this.level.patrol.from)
@@ -202,9 +207,18 @@ export class Heist {
     if (this.tick % 4 === 0 && this.player.walking)
       this.trace.push({ x: this.player.x, y: this.player.y });
     this.security();
+    // Movement and sight use the previous tick’s doors. A live pickup sets the
+    // phase for this tick’s door resolution, visible to movement next tick.
+    const takingLoot =
+      !this.player.caught &&
+      !!(input & USE) &&
+      !this.loot &&
+      near(this.player, this.level.loot, 205);
+    if (takingLoot && this.level.lockdownOnLoot) this.phase = "lockdown";
     this.level.gates.forEach((g, i) => {
-      const onPad = this.actors.some((a) => !a.caught && atControl(a, g));
+      const enabled = !g.phase || g.phase === this.phase;
       if (
+        enabled &&
         g.kind === "pulse" &&
         this.actors.some(
           (a, n) => !a.caught && inputs[n] & USE && atControl(a, g),
@@ -217,16 +231,21 @@ export class Heist {
       const held =
         this.doors[i] &&
         this.actors.some((a) => !a.caught && near(a, g, UNIT / 2 + RADIUS));
-      const open =
-        (g.kind === "plate" ? onPad : this.pulses[i] > this.tick) || held;
+      const powered =
+        g.kind === "automatic" ||
+        (g.kind === "plate"
+          ? this.actors.some((a) => !a.caught && atControl(a, g))
+          : this.pulses[i] > this.tick);
+      const open = (enabled && powered) || held;
       if (open !== this.doors[i]) this.cues.push(open ? "door" : "lock");
       this.doors[i] = open;
     });
     if (!this.player.caught) {
       if (input & USE) {
-        if (!this.loot && near(this.player, this.level.loot, 205)) {
+        if (takingLoot) {
           this.loot = true;
           this.cues.push("loot");
+          if (this.level.lockdownOnLoot) this.cues.push("lockdown");
         } else if (!this.bonus && near(this.player, this.level.bonus, 190)) {
           this.bonus = true;
           this.cues.push("bonus");
@@ -248,7 +267,7 @@ export class Heist {
         ? 2
         : input & USE
           ? 3
-          : this.player.walking
+          : input & (UP | DOWN | LEFT | RIGHT)
             ? 1
             : 0,
     );

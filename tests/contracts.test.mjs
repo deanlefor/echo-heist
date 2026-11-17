@@ -39,6 +39,7 @@ function go(s, x, y) {
 }
 test("all facility geometry and interactive objects are on valid tiles", () => {
   for (const l of levels) {
+    assert.equal(l.tiles.length, 12, l.title);
     assert.ok(
       l.tiles.every((row) => row.length === 23),
       l.title,
@@ -49,7 +50,7 @@ test("all facility geometry and interactive objects are on valid tiles", () => {
       l.loot,
       l.bonus,
       ...l.gates,
-      ...l.gates.map((g) => g.source),
+      ...l.gates.flatMap(g => g.source ? [g.source] : []),
       ...(l.patrol ? [l.patrol.from, l.patrol.to, l.patrol.bell] : []),
     ])
       assert.equal(l.tiles[a.y][a.x], ".", l.title + " " + JSON.stringify(a));
