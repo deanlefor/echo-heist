@@ -1,27 +1,169 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0e111a"><title>ECHO HEIST · Parallax Arcade</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%23171d2b'/%3E%3Cpath d='M16 7 4 16l12 9V7zm12 0-12 9 12 9V7z' fill='%2380e7c6'/%3E%3C/svg%3E"><link rel="stylesheet" href="style.css"></head>
-<body><div class="shell">
-<header class="topbar"><div class="publisher"><i data-icon="arcade"></i> PARALLAX <b>ARCADE</b></div>
-<nav aria-label="Game settings"><button id="help"><i data-icon="keys"></i> Controls</button><button id="audio"><i data-icon="sound"></i><span>Sound on</span></button><button id="pause" aria-label="Pause game"><i data-icon="pause"></i><span>Pause</span></button></nav></header>
-<section class="hero" aria-label="Echo Heist"><canvas id="sky" aria-hidden="true"></canvas><div class="hero-copy"><h1 aria-label="Echo Heist"><canvas id="logo" aria-hidden="true"></canvas></h1><p>You are your own getaway crew.</p></div></section>
-<main><div class="play-column">
-<section class="monitor panel" aria-label="Game monitor">
-<div class="telemetry"><div class="timer metric"><i data-icon="timer"></i><div><span>Time remaining</span><strong id="time">00:30<span>.00</span></strong></div></div><div class="metric"><i data-icon="loop"></i><div><span>Current loop</span><strong id="loop">01</strong></div></div><div class="metric echoes"><i data-icon="echo"></i><div><span>Active echoes</span><strong id="echoes">00</strong></div></div></div>
-<div class="feed-title"><span><i class="led"></i><b>Facility feed</b><em>/</em><span id="facility"></span></span><span class="channel"><i data-icon="signal"></i> CAM <span id="cam">01</span></span></div>
-<div class="viewport"><canvas id="board" tabindex="0" aria-label="Playable vault. Use arrow keys or WASD to move, E to interact, R to record an Echo."></canvas><div class="overlay" id="overlay" hidden></div></div>
-<div class="status"><i data-icon="prompt"></i><span id="status" role="status"></span></div>
-</section>
-<div class="touch" aria-label="Touch controls"><div class="dpad"><button data-dir="1" aria-label="Move up">▲</button><button data-dir="4" aria-label="Move left">◀</button><button data-dir="2" aria-label="Move down">▼</button><button data-dir="8" aria-label="Move right">▶</button></div><button id="touch-use">E · Interact</button></div>
-<section class="panel timeline"><div class="section-head"><h2><i data-icon="wave"></i> Echo timeline</h2><span class="record"><i></i><span id="rec">Standby</span></span></div><div id="lanes"></div>
-<div class="ruler"><span>0s</span><span>10s</span><span>20s</span><span>30s</span></div>
-<div class="actions"><button class="primary" id="rewind"><i data-icon="rewind"></i>Rewind <kbd>R</kbd></button><button id="undo"><i data-icon="undo"></i>Undo echo <kbd>Z</kbd></button><button id="restart"><i data-icon="restart"></i>Restart <kbd>X</kbd></button></div></section>
-</div>
-<aside><section class="panel dossier"><div class="section-head"><h2><i data-icon="folder"></i> Mission brief</h2><span class="filecode" id="filecode">EH–01</span></div>
-<div class="brief-body"><div class="eyebrow" id="contract"></div><h3 id="title"></h3><p id="brief"></p>
-<div class="objective"><i data-icon="gem"></i><div><span>Target loot</span><strong id="item"></strong></div><b id="looted"></b></div>
-<div class="optional"><i data-icon="shard"></i><span>Bonus intel</span><b id="bonus">Optional</b></div>
-<button id="hint"><span><i data-icon="bulb"></i> Show hint</span><b>+</b></button><p id="hinttext" hidden></p></div></section>
-<section class="panel contracts"><div class="section-head"><h2><i data-icon="stack"></i> Contract select</h2><span class="filecode" id="completed">0 / 5</span></div><div id="jobs"></div></section>
-</aside></main>
-<footer><div class="footer-keys"><span><kbd>W A S D</kbd> / <kbd>↑ ← ↓ →</kbd> Move</span><span><kbd>E</kbd> Interact</span><span><kbd>R</kbd> Rewind</span><span><kbd>P</kbd> Pause</span></div><span class="local"><i class="led"></i> Local save</span></footer>
-</div><dialog id="dialog"><div id="dialog-content"></div></dialog><script src="game.js"></script></body></html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0e111a" />
+    <title>ECHO HEIST · Parallax Arcade</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%23171d2b'/%3E%3Cpath d='M16 7 4 16l12 9V7zm12 0-12 9 12 9V7z' fill='%2380e7c6'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar">
+        <div class="publisher">
+          <i data-icon="arcade"></i> PARALLAX <b>ARCADE</b>
+        </div>
+        <nav aria-label="Game settings">
+          <button id="help"><i data-icon="keys"></i> Controls</button
+          ><button id="audio">
+            <i data-icon="sound"></i><span>Sound on</span></button
+          ><button id="pause" aria-label="Pause game">
+            <i data-icon="pause"></i><span>Pause</span>
+          </button>
+        </nav>
+      </header>
+      <section class="hero" aria-label="Echo Heist">
+        <img id="sky" alt="" />
+        <div class="hero-copy">
+          <h1 aria-label="Echo Heist"><img id="logo" alt="Echo Heist" /></h1>
+          <p>You are your own getaway crew.</p>
+        </div>
+      </section>
+      <main>
+        <div class="play-column">
+          <section class="monitor panel" aria-label="Game monitor">
+            <div class="telemetry">
+              <div class="timer metric">
+                <i data-icon="timer"></i>
+                <div>
+                  <span>Time remaining</span
+                  ><strong id="time">00:30<span>.00</span></strong>
+                </div>
+              </div>
+              <div class="metric">
+                <i data-icon="loop"></i>
+                <div>
+                  <span>Current loop</span><strong id="loop">01</strong>
+                </div>
+              </div>
+              <div class="metric echoes">
+                <i data-icon="echo"></i>
+                <div>
+                  <span>Active echoes</span><strong id="echoes">00</strong>
+                </div>
+              </div>
+            </div>
+            <div class="feed-title">
+              <span
+                ><i class="led"></i><b>Facility feed</b><em>/</em
+                ><span id="facility"></span></span
+              ><span class="channel"
+                ><i data-icon="signal"></i> CAM <span id="cam">01</span></span
+              >
+            </div>
+            <div class="viewport">
+              <canvas
+                id="board"
+                tabindex="0"
+                aria-label="Playable vault. Use arrow keys or WASD to move, E to interact, R to record an Echo."
+              ></canvas>
+              <div class="overlay" id="overlay" hidden></div>
+            </div>
+            <div class="status">
+              <i data-icon="prompt"></i><span id="status" role="status"></span>
+            </div>
+          </section>
+          <div class="touch" aria-label="Touch controls">
+            <div class="dpad">
+              <button data-dir="1" aria-label="Move up">▲</button
+              ><button data-dir="4" aria-label="Move left">◀</button
+              ><button data-dir="2" aria-label="Move down">▼</button
+              ><button data-dir="8" aria-label="Move right">▶</button>
+            </div>
+            <button id="touch-use">E · Interact</button>
+          </div>
+          <section class="panel timeline">
+            <div class="section-head">
+              <h2><i data-icon="wave"></i> Echo timeline</h2>
+              <div class="timeline-tools">
+                <button
+                  id="paths"
+                  aria-pressed="false"
+                  title="Show the original recorded routes"
+                >
+                  Paths</button
+                ><span class="record"
+                  ><i></i><span id="rec">Standby</span></span
+                >
+              </div>
+            </div>
+            <div id="lanes"></div>
+            <div class="ruler">
+              <span>0s</span><span>10s</span><span>20s</span><span>30s</span>
+            </div>
+            <div class="actions">
+              <button class="primary" id="rewind">
+                <i data-icon="rewind"></i>Rewind <kbd>R</kbd></button
+              ><button id="undo">
+                <i data-icon="undo"></i>Undo echo <kbd>Z</kbd></button
+              ><button id="restart">
+                <i data-icon="restart"></i>Restart <kbd>X</kbd>
+              </button>
+            </div>
+          </section>
+        </div>
+        <aside>
+          <section class="panel dossier">
+            <div class="section-head">
+              <h2><i data-icon="folder"></i> Mission brief</h2>
+              <span class="filecode" id="filecode">EH–01</span>
+            </div>
+            <div class="brief-body">
+              <div class="eyebrow" id="contract"></div>
+              <h3 id="title"></h3>
+              <p id="brief"></p>
+              <div class="objective">
+                <i data-icon="gem"></i>
+                <div><span>Target loot</span><strong id="item"></strong></div>
+                <b id="looted"></b>
+              </div>
+              <div class="optional">
+                <i data-icon="shard"></i><span>Bonus intel</span
+                ><b id="bonus">Optional</b>
+              </div>
+              <p id="best" hidden></p>
+              <button id="hint">
+                <span><i data-icon="bulb"></i> Show hint</span><b>+</b>
+              </button>
+              <p id="hinttext" hidden></p>
+            </div>
+          </section>
+          <section class="panel contracts">
+            <div class="section-head">
+              <h2><i data-icon="stack"></i> Contract select</h2>
+              <span class="filecode" id="completed">0 / 5</span>
+            </div>
+            <div id="jobs"></div>
+          </section>
+        </aside>
+      </main>
+      <footer>
+        <div class="footer-keys">
+          <span><kbd>W A S D</kbd> / <kbd>↑ ← ↓ →</kbd> Move</span
+          ><span><kbd>E</kbd> Interact</span><span><kbd>R</kbd> Rewind</span
+          ><span><kbd>P</kbd> Pause</span>
+        </div>
+        <span class="local"><i class="led"></i> Local save</span>
+      </footer>
+    </div>
+    <dialog id="dialog"><div id="dialog-content"></div></dialog>
+    <script src="game.js"></script>
+  </body>
+</html>
