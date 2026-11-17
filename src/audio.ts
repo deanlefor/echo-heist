@@ -85,6 +85,10 @@ export class AudioDeck {
     if (cue === "relayOffline") this.tone(245, 148, 0.09, "triangle", 0.17);
     if (cue === "empty") this.tone(95, 90, 0.07, "sine", 0.12);
   }
+  berthBell() {
+    this.tone(440, 440, 0.13, "sine", 0.2);
+    this.tone(660, 660, 0.24, "sine", 0.2, 0.12);
+  }
   music() {
     if (!this.ctx || !this.active || this.muted || this.ctx.state !== "running")
       return;

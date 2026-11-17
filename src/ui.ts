@@ -4,6 +4,7 @@ import {
   LIMIT,
   RELAY_STAMP,
   HZ,
+  RIGHT,
   UNIT,
   RADIUS,
   near,
@@ -115,6 +116,72 @@ export function dispatchStatus(s: Heist) {
   if (!pending)
     return "Too late. Relay R needed lockdown before the stamp. Press T to retry.";
   return "Relay R armed. Move toward gate R while your clerk approaches the stamp.";
+}
+
+// Read the current bodies and remaining tape inputs, including runs in which
+// a different Echo (or the live operator) takes over a station.
+export function handoffStatus(s: Heist) {
+  const yard = s.level.handoff;
+  if (!yard) return;
+  const release = s.level.gates[yard.release];
+  const berth = s.level.gates[yard.berth];
+  const departure = s.level.gates[yard.departure];
+  if (atControl(s.player, departure) && s.pulses[yard.departure])
+    return "Departure stamped. Rewind here to send the crew out with you.";
+  if (s.loot && s.player.x - RADIUS > (departure.x + 1) * UNIT)
+    return s.bonus
+      ? "Intel aboard. Step onto EXIT."
+      : "Platform Zero reached. Board at EXIT or collect the platform intel.";
+  if (s.doors[yard.departure])
+    return s.loot
+      ? "Departure bell! Cross gate C now."
+      : "Gate C is open. Bring the brass token aboard.";
+  if (s.pulses[yard.departure] && s.loot)
+    return "Missed departure. Press T with this crew and bring the token to C sooner.";
+  if (near(s.player, s.level.loot, 205) && !s.loot)
+    return "Press E for the brass token, then head east to gate C.";
+  if (atControl(s.player, berth) && s.tracks.length)
+    return "Pad B held. Let your operator enter the booth before you double back.";
+  if (s.doors[yard.berth])
+    return s.loot
+      ? "Berth B received. Wait at gate C for the departure pulse."
+      : "Berth B received! Through gate B, click pulse C to call the train.";
+  if (near(s.player, release, UNIT) && !s.tracks.length)
+    return s.tick < 8 * HZ
+      ? "Shutter A shut. Keep pushing Right until 22s remain to give your operator time."
+      : "Push recorded. Rewind here, then work the switch at pulse A.";
+  const onLine = s.tracks.findIndex((_, i) => {
+    const runner = s.actors[i];
+    return (
+      Math.abs(runner.y - (release.y + 0.5) * UNIT) < UNIT / 2 &&
+      runner.x >= release.x * UNIT - UNIT
+    );
+  });
+  if (onLine >= 0) {
+    const moving = s.tracks[onLine].commands.some(
+      (cmd, tick) => tick >= s.tick && !!(cmd & RIGHT),
+    );
+    if (!moving)
+      return "Runner stopped short of B. Release A earlier or record a longer eastbound push.";
+    if (s.actors[onLine].x > (release.x + 0.5) * UNIT)
+      return "Runner through A. Watch the berth light as they reach pad B.";
+    if (s.doors[yard.release])
+      return "A released. The runner can cross on their recorded inputs.";
+    if (s.pulses[yard.release])
+      return "A closed too soon. Pulse again at the shutter, or change the operator’s tape.";
+    return s.loot
+      ? "Runner at A. Watch for your operator’s release."
+      : "Runner at A. Pulse A now to send them onto pad B.";
+  }
+  if (s.pulses[yard.release] && !s.doors[yard.release])
+    return "A closed before the runner arrived. Pulse again when they reach the shutter.";
+  if (s.loot)
+    return "Token secured. Stage at gate C while your crew works the line.";
+  if (s.tracks.length && atControl(s.player, release))
+    return "Switch A ready. Watch the runner approach, then press E to release.";
+  if (!s.tracks.length)
+    return "Send the first runner east. Click pad B and keep pushing against shutter A.";
+  return s.level.brief;
 }
 
 export class Timeline {

@@ -15,7 +15,7 @@ import { Feed } from "./render.ts";
 import { PointerRoute } from "./input.ts";
 import { AudioDeck } from "./audio.ts";
 import { skyline, wordmark } from "./skyline.ts";
-import { el, digits, text, icons, icon, Timeline, dispatchStatus } from "./ui.ts";
+import { el, digits, text, icons, icon, Timeline, dispatchStatus, handoffStatus } from "./ui.ts";
 import { readSave, writeSave, result, better, medals, tiers, formatTime } from "./save.ts";
 const save = readSave(),
   audio = new AudioDeck(),
@@ -116,7 +116,9 @@ function jobs() {
   text("target-caption", best?.medal === 3 ? "Gold achieved" : "Next · " + medals[(best?.medal ?? 0) + 1]);
 
 }
+let berthLit = false;
 function switchTo(i: number) {
+  berthLit = false;
   index = i;
   s = new Heist(levels[i]);
   feed.setLevel(s.level);
@@ -162,7 +164,7 @@ function contextual() {
   if (s.player.caught)
     return "Sentry contact. Retry this loop or rewind to keep its recording.";
   if (s.paused) return "Timeline suspended. Your crew is waiting.";
-  const dispatch = dispatchStatus(s);
+  const dispatch = dispatchStatus(s) ?? handoffStatus(s);
   if (dispatch) return dispatch;
   if (near(s.player, s.level.loot, 205) && !s.loot)
     return "Press E to steal the " + s.level.item.toLowerCase() + ".";
@@ -358,6 +360,15 @@ dialog.addEventListener("close", () => {
   board.focus({ preventScroll: true });
 });
 function effects() {
+  const yard = s.level.handoff;
+  if (yard) {
+    const received = s.doors[yard.berth];
+    if (received && !berthLit) {
+      audio.berthBell();
+      notice = "";
+    }
+    berthLit = received;
+  }
   for (const cue of s.cues.splice(0)) {
     audio.effect(cue);
     if (cue === "rewind" || cue === "retry" || cue === "undo") {
@@ -389,6 +400,7 @@ function effects() {
       ["lockdown", "pulse", "relayOffline"].includes(cue)
     )
       notice = "";
+    if (yard && (cue === "loot" || cue === "pulse")) notice = "";
     if (cue === "lockdown" && !s.level.signalBox)
       say(
         "LOCKDOWN · A/B sealing. H released. Hold C for maintenance extraction.",

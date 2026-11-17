@@ -1,22 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { PointerRoute } from "../src/input.ts";
-import { Heist, atControl, near, UNIT, RADIUS } from "../src/sim.ts";
+import { go, recordYardCrew } from "./route-helpers.mjs";
+import { Heist, atControl, UNIT, RADIUS } from "../src/sim.ts";
 import { levels } from "../src/levels.ts";
 import { result } from "../src/save.ts";
-function go(s, target, done) {
-  const input = new PointerRoute();
-  assert.ok(input.plan(s.level, s.player, target, s.phase));
-  for (let i = 0; i < 900 && !s.won && !s.player.caught && input.target; i++) {
-    s.step(input.next(s));
-    if (done?.()) return;
-  }
-  assert.ok(!s.player.caught, "Guard intercepted a route in " + s.level.title);
-  assert.ok(
-    s.won || near(s.player, target),
-    "Runner did not reach " + JSON.stringify(target),
-  );
-}
 test("rewinding on the first engaged tick leaves a working teammate", () => {
   const s = new Heist(levels[0]),
     pad = s.level.gates[0];
@@ -34,17 +21,20 @@ for (const level of levels)
     level.title + " has an attainable gold medal through pointer controls",
     () => {
       const s = new Heist(level);
-      for (const g of level.gates.filter((g) => g.kind === "plate")) {
-        go(s, g.source);
-        s.rewind();
-      }
-      if (level.patrol) {
-        go(s, level.patrol.bell);
-        s.rewind();
-      }
-      for (const g of level.gates.filter((g) => g.kind === "pulse")) {
-        go(s, g.source);
-        s.rewind();
+      if (level.handoff) recordYardCrew(s);
+      else {
+        for (const g of level.gates.filter((g) => g.kind === "plate")) {
+          go(s, g.source);
+          s.rewind();
+        }
+        if (level.patrol) {
+          go(s, level.patrol.bell);
+          s.rewind();
+        }
+        for (const g of level.gates.filter((g) => g.kind === "pulse")) {
+          go(s, g.source);
+          s.rewind();
+        }
       }
       go(s, level.loot);
       if (level.signalBox) {

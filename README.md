@@ -4,7 +4,9 @@ _You are your own getaway crew._
 
 ## Play Echo Heist
 
-All seven completed contracts are available in Contract Select. In **06 The Lockdown**, stealing the core opens a new route for a recorded Echo. In **07 The Window**, time the theft between your Echo crossing a shutter and stamping a relay. [Play Echo Heist](https://deanlefor.com/echo-heist/).
+Seven contracts are available on the public site. In **06 The Lockdown**, stealing the core opens a new route for a recorded Echo. In **07 The Window**, time the theft between your Echo crossing a shutter and stamping a relay. [Play Echo Heist](https://deanlefor.com/echo-heist/).
+
+On this review branch, open `index.html` and select **08 The Handoff** to play the Morrow Freight Interchange. The compiled game is included.
 
 ## Play on a Mac
 
@@ -29,7 +31,7 @@ Walk onto the purple pad. When the door opens, press **R**. Move again and your 
 | P or Escape               | Pause or resume. Changing tabs or losing focus pauses an active run.     |
 | H / M                     | Open the controls / toggle sound.                                        |
 
-The timeline shows movement commands (including pushing against a door) as low bars and time spent at a device as tall bars. The dotted extension shows a hold after a tape ends. **Paths** shows where the crew walked during its original recordings. A gold mark identifies a recorded emergency stamp. All seven contracts are available from the start.
+The timeline shows movement commands (including pushing against a door) as low bars and time spent at a device as tall bars. The dotted extension shows a hold after a tape ends. **Paths** shows where the crew walked during its original recordings. A gold mark identifies a recorded emergency stamp. Every contract is selectable from the start.
 
 ## The rules of time
 
@@ -57,6 +59,16 @@ The Midnight Postmark sits just inside gate A. The dispatch relay is across shut
 
 On the direct pointer route you reach the postmark at 1.35 seconds. The clerk clears S at about 3.65 seconds and stamps at 6.13 seconds. These are elapsed times within the final loop. The HUD says when the clerk has cleared S, so you can play by watching the crew. Taking the postmark on the same tick as the stamp is too late. Press **T** to retry with both recordings. For a smaller crew, record a single operator holding A long enough for you to enter, then walking to R to stamp.
 
+## Morrow Freight Interchange
+
+The switchboard above the shunt line reads left to right. **A** releases the eastbound runner, **B** lights when that runner weighs down the berth, and **C** calls the departure lift.
+
+1. Click the far-right pad B or hold Right. The runner stops at shutter A. Keep the movement recording until the clock shows **22s**, then rewind.
+2. Stand a tile below pulse A. Watch your Echo reach the shutter, then click pulse A. Your Echo passes its original stopping point and holds pad B at the end of the track. Click pulse C through the newly open booth door. Rewind after the departure bell.
+3. Take the Platform Zero token in the lower hall. Head east to gate C and cross during the operator’s replayed pulse. Optional intel sits across the gate, a short detour from EXIT.
+
+Each pulse lasts 2.5 seconds. The eight-second runner tape gives the operator roughly four seconds to act after the runner reaches the shutter. A clean three-take run with intel takes about 23–26 seconds including both recordings. Bronze is 55s, Silver 40s and Gold 30s.
+
 ## Mastery
 
 Contract Select shows your fastest clear for each job and the selected contract’s Bronze, Silver and Gold targets. Match or beat a target to earn that medal. A slower escape still counts as a clear. Times include all active loops. Equal times favor fewer loops, then collected bonus intel. Existing saved runs receive the medal for their recorded time.
@@ -80,7 +92,7 @@ The TypeScript build uses esbuild to produce a classic browser script. The runti
 | Source                                       | Responsibility                                                                           |
 | -------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | src/sim.ts                                   | Fixed-step clock, input tapes, crew, collision, guards and security mechanisms           |
-| src/levels.ts                                | Authored geometry, devices, targets and scoring budgets for seven facilities              |
+| src/levels.ts                                | Authored geometry, devices, targets and scoring budgets for the contract roster              |
 | src/input.ts                                 | Pointer routing into the same simulation commands as keyboard input                      |
 | src/render.ts, src/pixels.ts, src/skyline.ts | Pixel-art facility feed, characters, effects and skyline                                 |
 | src/audio.ts                                 | Synthesized effects and ambient sequencer                                                |

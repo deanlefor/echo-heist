@@ -174,6 +174,14 @@ function surface(g: Pixels, l: Level) {
         g.glow(px + 11, py + 8, 22, "#6ee1d92a");
       }
     }
+  if (l.handoff) {
+    const rail = pos(l.start),
+      stop = pos(l.gates[l.handoff.berth].source!);
+    for (let x = rail.x; x < stop.x; x += 8)
+      g.rect(x, rail.y - 6, 3, 13, "#29312f");
+    for (const dy of [-5, 5])
+      g.line(rail.x, rail.y + dy, stop.x, rail.y + dy, "#99846a");
+  }
   const a = pos(l.start),
     v = pos(l.loot);
   // Painted floor lines, stencilled bay numbers and worn hazard chevrons.
@@ -232,6 +240,16 @@ function diamond(g: Pixels, x: number, y: number, small: boolean, t: number) {
   );
 }
 const trophies: Record<string, string[]> = {
+  "Platform Zero token": [
+    "...aaaa...",
+    ".aabbbbaa.",
+    ".abffffba.",
+    "abbfddcfba",
+    "abcfddcfba",
+    ".acffffca.",
+    ".aabccbaa.",
+    "...aaaa...",
+  ],
   "Midnight Postmark": [
     "...abbba..",
     "...bfcca..",
@@ -314,6 +332,40 @@ function trophy(g: Pixels, l: Level, x: number, y: number, t: number) {
     2,
   );
 }
+// The repeater occupies the sealed signal gantry above the shunt line.
+function yardBoard(g: Pixels, s: Heist) {
+  const yard = s.level.handoff!;
+  const x = OX + 14 * T,
+    y = OY + T + 4;
+  g.rect(x, y, 172, 54, "#5b675f");
+  g.rect(x + 2, y + 2, 168, 50, "#192725");
+  g.rect(x + 4, y + 4, 164, 13, "#283b37");
+  g.label(x + 9, y + 7, "MORROW  /  LINE ZERO", "#ded0a9");
+  const signals = [
+    { name: "A SHUNT", gate: yard.release, on: "CLEAR", off: "STOP" },
+    { name: "B BERTH", gate: yard.berth, on: "HELD", off: "EMPTY" },
+    { name: "C LIFT", gate: yard.departure, on: "BOARD", off: "WAIT" },
+  ];
+  signals.forEach((signal, i) => {
+    const left = x + 6 + i * 54;
+    const lit =
+      signal.gate === yard.berth
+        ? s.actors.some(
+            (a) => !a.caught && atControl(a, s.level.gates[yard.berth]),
+          )
+        : s.doors[signal.gate];
+    g.label(left + 2, y + 22, signal.name, "#b1c0b6");
+    g.rect(left, y + 32, 50, 15, "#0a1415");
+    g.rect(left + 3, y + 37, 4, 4, lit ? mint : "#927052");
+    g.label(
+      left + 11,
+      y + 36,
+      lit ? signal.on : signal.off,
+      lit ? mint : "#cbad78",
+    );
+  });
+}
+
 export class Feed {
   paths = false;
   target?: Point;
@@ -352,6 +404,7 @@ export class Feed {
         g.rect(lamp.x - 5, lamp.y - 13, 10, 2, "#ff8180");
       }
     }
+    if (l.handoff) yardBoard(g, s);
     if (this.paths)
       s.tracks.forEach((track, i) => {
         const color = ECHO_COLORS[i % ECHO_COLORS.length];

@@ -25,6 +25,7 @@ export interface Level {
   gates: Gate[];
   patrol?: Patrol;
   lockdownOnLoot?: boolean;
+  handoff?: { release: number; berth: number; departure: number };
   // A staffed signal box gives the runner a visible cue to authorize the theft.
   signalBox?: { min: Point; max: Point };
   zones?: { name: string; firstColumn: number }[];
@@ -277,6 +278,48 @@ export const theWindow: Level = {
   ],
   medalTimes: { bronze: 42, silver: 29, gold: 20 },
 };
+export const handoff: Level = {
+  title: "The Handoff",
+  site: "Morrow Freight Interchange",
+  item: "Platform Zero token",
+  brief:
+    "Release a runner through A onto pad B. Their weight admits the switch operator to relay C. Catch the departure with the brass token.",
+  hint: "Click pad B or hold Right until 22s remain, then rewind. On take two, wait one tile below pulse A. When the runner reaches the shutter, click pulse A, then pulse C beyond gate B. Rewind. Take the token south and stage at gate C.",
+  quip: "One fare paid. Three identical passengers accounted for.",
+  victory: { eyebrow: "Platform Zero boarding", title: "Last train out." },
+  tiles: [
+    "#######################",
+    "##S..S##S....##########",
+    "#.....#.....S##########",
+    "#............##########",
+    "#.....#################",
+    "#...................###",
+    "##....#################",
+    "#......CC.......##....#",
+    "#.....................#",
+    "#C.........C.....#....#",
+    "###........C..S.###.S.#",
+    "#######################",
+  ],
+  start: p(3, 5),
+  loot: p(10, 8),
+  bonus: p(20, 7),
+  exit: p(20, 9),
+  gates: [
+    { ...gate(16, 5, 3, 3, "pulse"), label: "A" },
+    { ...gate(6, 3, 19, 5), label: "B" },
+    { ...gate(17, 8, 12, 3, "pulse"), label: "C" },
+  ],
+  handoff: { release: 0, berth: 1, departure: 2 },
+  par: 3,
+  zones: [
+    { name: "SWITCH HOUSE", firstColumn: 1 },
+    { name: "SHUNT LINE", firstColumn: 10 },
+    { name: "PLATFORM 0", firstColumn: 17 },
+  ],
+  medalTimes: { bronze: 55, silver: 40, gold: 30 },
+};
+
 export const levels: Level[] = [
   first,
   company,
@@ -285,4 +328,5 @@ export const levels: Level[] = [
   score,
   lockdown,
   theWindow,
+  handoff,
 ];

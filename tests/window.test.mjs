@@ -241,7 +241,7 @@ test("the entrance, sorting shutter and dispatch gate have no walk-around routes
   assert.equal(canWalk(level.loot, relay.source, entrance), false);
 });
 test("seventh selection and medal coexist with a six-contract save", () => {
-  assert.equal(levels.length, 7);
+  assert.ok(levels.length >= 7);
   assert.equal(levels[6], level);
   const { s, clear } = recordCrew();
   steal(s, clear + 24);

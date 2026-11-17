@@ -238,6 +238,46 @@
     ],
     medalTimes: { bronze: 42, silver: 29, gold: 20 }
   };
+  var handoff = {
+    title: "The Handoff",
+    site: "Morrow Freight Interchange",
+    item: "Platform Zero token",
+    brief: "Release a runner through A onto pad B. Their weight admits the switch operator to relay C. Catch the departure with the brass token.",
+    hint: "Click pad B or hold Right until 22s remain, then rewind. On take two, wait one tile below pulse A. When the runner reaches the shutter, click pulse A, then pulse C beyond gate B. Rewind. Take the token south and stage at gate C.",
+    quip: "One fare paid. Three identical passengers accounted for.",
+    victory: { eyebrow: "Platform Zero boarding", title: "Last train out." },
+    tiles: [
+      "#######################",
+      "##S..S##S....##########",
+      "#.....#.....S##########",
+      "#............##########",
+      "#.....#################",
+      "#...................###",
+      "##....#################",
+      "#......CC.......##....#",
+      "#.....................#",
+      "#C.........C.....#....#",
+      "###........C..S.###.S.#",
+      "#######################"
+    ],
+    start: p(3, 5),
+    loot: p(10, 8),
+    bonus: p(20, 7),
+    exit: p(20, 9),
+    gates: [
+      { ...gate(16, 5, 3, 3, "pulse"), label: "A" },
+      { ...gate(6, 3, 19, 5), label: "B" },
+      { ...gate(17, 8, 12, 3, "pulse"), label: "C" }
+    ],
+    handoff: { release: 0, berth: 1, departure: 2 },
+    par: 3,
+    zones: [
+      { name: "SWITCH HOUSE", firstColumn: 1 },
+      { name: "SHUNT LINE", firstColumn: 10 },
+      { name: "PLATFORM 0", firstColumn: 17 }
+    ],
+    medalTimes: { bronze: 55, silver: 40, gold: 30 }
+  };
   var levels = [
     first,
     company,
@@ -245,7 +285,8 @@
     timing,
     score,
     lockdown,
-    theWindow
+    theWindow,
+    handoff
   ];
 
   // src/sim.ts
@@ -816,6 +857,13 @@
           g.glow(px + 11, py + 8, 22, "#6ee1d92a");
         }
       }
+    if (l.handoff) {
+      const rail = pos(l.start), stop = pos(l.gates[l.handoff.berth].source);
+      for (let x = rail.x; x < stop.x; x += 8)
+        g.rect(x, rail.y - 6, 3, 13, "#29312f");
+      for (const dy of [-5, 5])
+        g.line(rail.x, rail.y + dy, stop.x, rail.y + dy, "#99846a");
+    }
     const a = pos(l.start), v = pos(l.loot);
     g.label(a.x - 16, a.y - 46, "01", "#4d616a", 2);
     g.label(v.x - 45, v.y + 48, "VAULT", "#655f50");
@@ -866,6 +914,16 @@
     );
   }
   var trophies = {
+    "Platform Zero token": [
+      "...aaaa...",
+      ".aabbbbaa.",
+      ".abffffba.",
+      "abbfddcfba",
+      "abcfddcfba",
+      ".acffffca.",
+      ".aabccbaa.",
+      "...aaaa..."
+    ],
     "Midnight Postmark": [
       "...abbba..",
       "...bfcca..",
@@ -948,6 +1006,34 @@
       2
     );
   }
+  function yardBoard(g, s2) {
+    const yard = s2.level.handoff;
+    const x = OX + 14 * T, y = OY + T + 4;
+    g.rect(x, y, 172, 54, "#5b675f");
+    g.rect(x + 2, y + 2, 168, 50, "#192725");
+    g.rect(x + 4, y + 4, 164, 13, "#283b37");
+    g.label(x + 9, y + 7, "MORROW  /  LINE ZERO", "#ded0a9");
+    const signals = [
+      { name: "A SHUNT", gate: yard.release, on: "CLEAR", off: "STOP" },
+      { name: "B BERTH", gate: yard.berth, on: "HELD", off: "EMPTY" },
+      { name: "C LIFT", gate: yard.departure, on: "BOARD", off: "WAIT" }
+    ];
+    signals.forEach((signal, i) => {
+      const left = x + 6 + i * 54;
+      const lit = signal.gate === yard.berth ? s2.actors.some(
+        (a) => !a.caught && atControl(a, s2.level.gates[yard.berth])
+      ) : s2.doors[signal.gate];
+      g.label(left + 2, y + 22, signal.name, "#b1c0b6");
+      g.rect(left, y + 32, 50, 15, "#0a1415");
+      g.rect(left + 3, y + 37, 4, 4, lit ? mint : "#927052");
+      g.label(
+        left + 11,
+        y + 36,
+        lit ? signal.on : signal.off,
+        lit ? mint : "#cbad78"
+      );
+    });
+  }
   var Feed = class {
     constructor(canvas, l) {
       __publicField(this, "paths", false);
@@ -984,6 +1070,7 @@
           g.rect(lamp.x - 5, lamp.y - 13, 10, 2, "#ff8180");
         }
       }
+      if (l.handoff) yardBoard(g, s2);
       if (this.paths)
         s2.tracks.forEach((track, i) => {
           const color = ECHO_COLORS[i % ECHO_COLORS.length];
@@ -1373,6 +1460,10 @@
       if (cue === "relayOffline") this.tone(245, 148, 0.09, "triangle", 0.17);
       if (cue === "empty") this.tone(95, 90, 0.07, "sine", 0.12);
     }
+    berthBell() {
+      this.tone(440, 440, 0.13, "sine", 0.2);
+      this.tone(660, 660, 0.24, "sine", 0.2, 0.12);
+    }
     music() {
       if (!this.ctx || !this.active || this.muted || this.ctx.state !== "running")
         return;
@@ -1716,6 +1807,56 @@
       return "Too late. Relay R needed lockdown before the stamp. Press T to retry.";
     return "Relay R armed. Move toward gate R while your clerk approaches the stamp.";
   }
+  function handoffStatus(s2) {
+    const yard = s2.level.handoff;
+    if (!yard) return;
+    const release = s2.level.gates[yard.release];
+    const berth = s2.level.gates[yard.berth];
+    const departure = s2.level.gates[yard.departure];
+    if (atControl(s2.player, departure) && s2.pulses[yard.departure])
+      return "Departure stamped. Rewind here to send the crew out with you.";
+    if (s2.loot && s2.player.x - RADIUS > (departure.x + 1) * UNIT)
+      return s2.bonus ? "Intel aboard. Step onto EXIT." : "Platform Zero reached. Board at EXIT or collect the platform intel.";
+    if (s2.doors[yard.departure])
+      return s2.loot ? "Departure bell! Cross gate C now." : "Gate C is open. Bring the brass token aboard.";
+    if (s2.pulses[yard.departure] && s2.loot)
+      return "Missed departure. Press T with this crew and bring the token to C sooner.";
+    if (near(s2.player, s2.level.loot, 205) && !s2.loot)
+      return "Press E for the brass token, then head east to gate C.";
+    if (atControl(s2.player, berth) && s2.tracks.length)
+      return "Pad B held. Let your operator enter the booth before you double back.";
+    if (s2.doors[yard.berth])
+      return s2.loot ? "Berth B received. Wait at gate C for the departure pulse." : "Berth B received! Through gate B, click pulse C to call the train.";
+    if (near(s2.player, release, UNIT) && !s2.tracks.length)
+      return s2.tick < 8 * HZ ? "Shutter A shut. Keep pushing Right until 22s remain to give your operator time." : "Push recorded. Rewind here, then work the switch at pulse A.";
+    const onLine = s2.tracks.findIndex((_, i) => {
+      const runner2 = s2.actors[i];
+      return Math.abs(runner2.y - (release.y + 0.5) * UNIT) < UNIT / 2 && runner2.x >= release.x * UNIT - UNIT;
+    });
+    if (onLine >= 0) {
+      const moving = s2.tracks[onLine].commands.some(
+        (cmd, tick) => tick >= s2.tick && !!(cmd & RIGHT)
+      );
+      if (!moving)
+        return "Runner stopped short of B. Release A earlier or record a longer eastbound push.";
+      if (s2.actors[onLine].x > (release.x + 0.5) * UNIT)
+        return "Runner through A. Watch the berth light as they reach pad B.";
+      if (s2.doors[yard.release])
+        return "A released. The runner can cross on their recorded inputs.";
+      if (s2.pulses[yard.release])
+        return "A closed too soon. Pulse again at the shutter, or change the operator\u2019s tape.";
+      return s2.loot ? "Runner at A. Watch for your operator\u2019s release." : "Runner at A. Pulse A now to send them onto pad B.";
+    }
+    if (s2.pulses[yard.release] && !s2.doors[yard.release])
+      return "A closed before the runner arrived. Pulse again when they reach the shutter.";
+    if (s2.loot)
+      return "Token secured. Stage at gate C while your crew works the line.";
+    if (s2.tracks.length && atControl(s2.player, release))
+      return "Switch A ready. Watch the runner approach, then press E to release.";
+    if (!s2.tracks.length)
+      return "Send the first runner east. Click pad B and keep pushing against shutter A.";
+    return s2.level.brief;
+  }
   var Timeline = class {
     constructor() {
       __publicField(this, "count", -1);
@@ -1909,7 +2050,9 @@
     }).join("");
     text("target-caption", best?.medal === 3 ? "Gold achieved" : "Next \xB7 " + medals[(best?.medal ?? 0) + 1]);
   }
+  var berthLit = false;
   function switchTo(i) {
+    berthLit = false;
     index = i;
     s = new Heist(levels[i]);
     feed.setLevel(s.level);
@@ -1948,7 +2091,7 @@
     if (s.player.caught)
       return "Sentry contact. Retry this loop or rewind to keep its recording.";
     if (s.paused) return "Timeline suspended. Your crew is waiting.";
-    const dispatch = dispatchStatus(s);
+    const dispatch = dispatchStatus(s) ?? handoffStatus(s);
     if (dispatch) return dispatch;
     if (near(s.player, s.level.loot, 205) && !s.loot)
       return "Press E to steal the " + s.level.item.toLowerCase() + ".";
@@ -2077,6 +2220,15 @@
     board.focus({ preventScroll: true });
   });
   function effects() {
+    const yard = s.level.handoff;
+    if (yard) {
+      const received = s.doors[yard.berth];
+      if (received && !berthLit) {
+        audio.berthBell();
+        notice = "";
+      }
+      berthLit = received;
+    }
     for (const cue of s.cues.splice(0)) {
       audio.effect(cue);
       if (cue === "rewind" || cue === "retry" || cue === "undo") {
@@ -2097,6 +2249,7 @@
       }
       if (s.level.signalBox && ["lockdown", "pulse", "relayOffline"].includes(cue))
         notice = "";
+      if (yard && (cue === "loot" || cue === "pulse")) notice = "";
       if (cue === "lockdown" && !s.level.signalBox)
         say(
           "LOCKDOWN \xB7 A/B sealing. H released. Hold C for maintenance extraction.",
