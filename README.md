@@ -2,6 +2,10 @@
 
 _You are your own getaway crew._
 
+## Play the development build
+
+[Play Echo Heist](https://deanlefor.com/echo-heist/). This development version includes five handcrafted contracts, deterministic Echo replay, and locally saved medal times.
+
 ## Play on a Mac
 
 Double-click **index.html** in Finder. The checked-in **game.js** is the playable build. The game runs offline and the clock waits for your first move.
@@ -50,6 +54,10 @@ npm ci
 npm test
 npm run build
 ```
+
+For a fresh checkout, clone [the Echo Heist repository](https://github.com/deanlefor/echo-heist) and run the commands above from its root. Open `index.html` to play offline or run `npm start` for the local server.
+
+On every push to `main`, GitHub Actions runs the locked install, tests, and production build using Node.js 24. A successful build publishes `index.html`, `style.css`, and the newly compiled `game.js` to GitHub Pages. The project inherits the account site's domain. Relative asset paths allow the same build to work under `/echo-heist/` and locally.
 
 The TypeScript build uses esbuild to produce a classic browser script. The runtime uses a local Canvas 2D pixel-rendering library, a fixed-step integer simulation, and Web Audio synthesis. Art, sound and the soundtrack are generated locally. Reduced-motion preferences suppress rewind flashes and celebratory particles.
 
