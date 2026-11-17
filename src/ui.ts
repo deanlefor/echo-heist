@@ -1,5 +1,14 @@
 import { ECHO_COLORS } from "./pixels.ts";
-import { Heist, LIMIT } from "./sim.ts";
+import {
+  Heist,
+  LIMIT,
+  RELAY_STAMP,
+  HZ,
+  UNIT,
+  RADIUS,
+  near,
+  atControl,
+} from "./sim.ts";
 export const el = <T extends HTMLElement = HTMLElement>(id: string) =>
   document.getElementById(id) as T;
 export const digits = (n: number) => String(n).padStart(2, "0");
@@ -41,6 +50,73 @@ export function text(id: string, value: string) {
   const node = el(id);
   if (node.textContent !== value) node.textContent = value;
 }
+// The operator cue follows the replayed body. The stamp marker describes the
+// original input tape; neither changes whether the relay receives USE.
+export function dispatchStatus(s: Heist) {
+  const box = s.level.signalBox;
+  if (!box) return;
+  const relay = s.level.gates.findIndex((g) => g.kind === "pulse");
+  const gate = s.level.gates[relay];
+  const atPostmark = near(s.player, s.level.loot, 205);
+  let recorded = false,
+    pending = false,
+    clerkThrough = false,
+    ready = false;
+  // The next tick is already too late to arm a relay stamped on that tick.
+  const nextStamp = s.tick + (s.phase === "normal" ? 1 : 0);
+  for (const [i, tape] of s.tracks.entries()) {
+    if (!tape.activity.includes(RELAY_STAMP)) continue;
+    recorded = true;
+    const a = s.actors[i];
+    const through =
+      !a.caught &&
+      a.x - RADIUS >= box.min.x * UNIT &&
+      a.x + RADIUS < (box.max.x + 1) * UNIT &&
+      a.y >= box.min.y * UNIT &&
+      a.y < (box.max.y + 1) * UNIT;
+    const upcoming = tape.activity.includes(RELAY_STAMP, nextStamp);
+    clerkThrough ||= through;
+    pending ||= upcoming;
+    ready ||= through && upcoming;
+  }
+  if (s.phase === "normal") {
+    if (atControl(s.player, gate))
+      return s.activity.includes(RELAY_STAMP)
+        ? "Offline stamp recorded. Rewind to give this job to your Echo."
+        : "Relay R offline. Press E to put a stamp on your tape.";
+    if (!atPostmark) return;
+    if (ready)
+      return "Shutter S clear. Take the postmark now with E or a second click.";
+    if (pending) return "Wait here. Your clerk still has to cross shutter S.";
+    if (recorded)
+      return "Too late for this stamp. Press T to retry with this crew.";
+    return "Record an Echo pressing E at relay R before taking the postmark.";
+  }
+  if (
+    s.player.x - RADIUS >= (gate.x + 1) * UNIT &&
+    s.player.y > (box.max.y + 1) * UNIT
+  )
+    return "Dispatch cleared. Take the green EXIT or collect the violet intel first.";
+  const left = s.pulses[relay] - s.tick;
+  if (left > 0)
+    return left <= HZ
+      ? "Gate R closing. Cross the striped threshold now."
+      : "Dispatch pulse! Gate R is open. Head east to EXIT.";
+  if (s.doors[relay]) return "Gate R interlock engaged. Finish crossing.";
+  if (s.pulses[relay] && !pending)
+    return "Gate R closed. The dispatch pulse expired. Press T to try again.";
+  const shutter = s.level.gates.findIndex(
+    (g) => g.kind === "automatic" && g.phase === "normal",
+  );
+  if (!recorded)
+    return "No stamp on tape. Record an Echo using the offline relay R.";
+  if (!s.doors[shutter] && !clerkThrough)
+    return "Too early. Shutter S sealed the clerk out. Press T and let them cross.";
+  if (!pending)
+    return "Too late. Relay R needed lockdown before the stamp. Press T to retry.";
+  return "Relay R armed. Move toward gate R while your clerk approaches the stamp.";
+}
+
 export class Timeline {
   count = -1;
   lastTick = -1;
@@ -81,8 +157,9 @@ export class Timeline {
       g.fillStyle = color;
       for (let n = 0; n < a.length; n += 3) {
         const v = Math.max(a[n], a[n + 1] || 0, a[n + 2] || 0),
-          h = [2, 4, 8, 10][v];
-        g.fillRect(n / 3, 10 - h, 1, h);
+          h = [2, 4, 8, 10, 10][v];
+        g.fillStyle = v === RELAY_STAMP ? "#ffd877" : color;
+        g.fillRect(n / 3, 10 - h, v === RELAY_STAMP ? 3 : 1, h);
       }
       if (!live && a.at(-1) === 2) {
         g.globalAlpha = 0.32;

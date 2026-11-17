@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { PointerRoute } from "../src/input.ts";
-import { Heist, atControl, near } from "../src/sim.ts";
+import { Heist, atControl, near, UNIT, RADIUS } from "../src/sim.ts";
 import { levels } from "../src/levels.ts";
 import { result } from "../src/save.ts";
 function go(s, target, done) {
@@ -47,6 +47,25 @@ for (const level of levels)
         s.rewind();
       }
       go(s, level.loot);
+      if (level.signalBox) {
+        assert.equal(
+          s.loot,
+          false,
+          "First click stages the runner for the handoff",
+        );
+        for (
+          let i = 0;
+          i < 900 &&
+          !s.actors.some(
+            (a) =>
+              a.x - RADIUS >= level.signalBox.min.x * UNIT &&
+              a.y < (level.signalBox.max.y + 1) * UNIT,
+          );
+          i++
+        )
+          s.step(0);
+        go(s, level.loot);
+      }
       go(s, level.bonus);
       go(s, level.exit);
       assert.ok(s.won);

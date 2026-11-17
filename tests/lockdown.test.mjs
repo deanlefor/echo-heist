@@ -193,7 +193,9 @@ test("a complete lockdown heist replays identically at 30 and 144 rendering fram
   assert.deepEqual(slow.s, guide);
 });
 test("sixth selection and record persist alongside the original contract IDs", () => {
-  assert.equal(levels.length, 6);
+  assert.deepEqual(levels.slice(0, 6).map(l => l.title), [
+    "The First Echo", "Three’s Company", "The Distraction", "Perfect Timing", "The Big Score", "The Lockdown",
+  ]);
   const slot = levels.indexOf(lockdown);
   assert.equal(slot, 5);
   const data = new Map();

@@ -197,13 +197,55 @@
     ],
     medalTimes: { bronze: 58, silver: 40, gold: 30 }
   };
+  var theWindow = {
+    title: "The Window",
+    site: "Meridian Dead Letter Office",
+    item: "Midnight Postmark",
+    brief: "Take the postmark after your clerk crosses shutter S and before they stamp relay R. The dispatch gate opens for one short pulse.",
+    hint: "Leave an Echo on A. Record another walking through S to the blue relay and pressing E, even while offline. On take three, click the postmark to stand ready. Watch the clerk, take it with E, then move for dispatch.",
+    quip: "Delivered yesterday. Signed for tomorrow.",
+    victory: { eyebrow: "Postmark cancelled", title: "Right on time." },
+    tiles: [
+      "#######################",
+      "##......######.......##",
+      "#...SS.....#.C..S.....#",
+      "#.....................#",
+      "#.......C..#..C.......#",
+      "##..###################",
+      "##..###......S..#.....#",
+      "#.....#.........#.....#",
+      "#..........CC.........#",
+      "#.....#.........#.....#",
+      "#....S#...C.....#...C.#",
+      "#######################"
+    ],
+    start: p(3, 8),
+    exit: p(20, 7),
+    loot: p(8, 8),
+    bonus: p(18, 10),
+    gates: [
+      { ...gate(6, 8, 2, 9), label: "A", phase: "normal" },
+      { x: 11, y: 3, kind: "automatic", phase: "normal", label: "S" },
+      { ...gate(16, 8, 20, 2, "pulse"), label: "R", phase: "lockdown" }
+    ],
+    lockdownOnLoot: true,
+    signalBox: { min: p(12, 1), max: p(21, 4) },
+    par: 3,
+    zones: [
+      { name: "INTAKE", firstColumn: 1 },
+      { name: "SORTING", firstColumn: 7 },
+      { name: "DISPATCH", firstColumn: 17 }
+    ],
+    medalTimes: { bronze: 42, silver: 29, gold: 20 }
+  };
   var levels = [
     first,
     company,
     distraction,
     timing,
     score,
-    lockdown
+    lockdown,
+    theWindow
   ];
 
   // src/sim.ts
@@ -212,6 +254,8 @@
   var UNIT = 240;
   var SPEED = 15;
   var RADIUS = 46;
+  var PULSE_TICKS = 150;
+  var RELAY_STAMP = 4;
   var UP = 1;
   var DOWN = 2;
   var LEFT = 4;
@@ -369,14 +413,21 @@
         this.trace.push({ x: this.player.x, y: this.player.y });
       this.security();
       const takingLoot = !this.player.caught && !!(input & USE) && !this.loot && near(this.player, this.level.loot, 205);
+      const previousPhase = this.phase;
+      let stampedRelay = false;
       if (takingLoot && this.level.lockdownOnLoot) this.phase = "lockdown";
       this.level.gates.forEach((g, i) => {
         const enabled = !g.phase || g.phase === this.phase;
-        if (enabled && g.kind === "pulse" && this.actors.some(
+        if (g.kind === "pulse" && this.actors.some(
           (a, n) => !a.caught && inputs[n] & USE && atControl(a, g)
         )) {
-          this.pulses[i] = this.tick + 150;
-          this.cues.push("pulse");
+          stampedRelay || (stampedRelay = !!g.phase && !!(input & USE) && atControl(this.player, g) && !this.player.caught);
+          if (enabled && (!g.phase || g.phase === previousPhase)) {
+            this.pulses[i] = this.tick + PULSE_TICKS;
+            this.cues.push("pulse");
+          } else {
+            this.cues.push("relayOffline");
+          }
         }
         const held = this.doors[i] && this.actors.some((a) => !a.caught && near(a, g, UNIT / 2 + RADIUS));
         const powered = g.kind === "automatic" || (g.kind === "plate" ? this.actors.some((a) => !a.caught && atControl(a, g)) : this.pulses[i] > this.tick);
@@ -404,7 +455,7 @@
         }
       }
       this.activity.push(
-        this.level.gates.some((g) => atControl(this.player, g)) || !!(this.level.patrol && near(this.player, this.level.patrol.bell)) ? 2 : input & USE ? 3 : input & (UP | DOWN | LEFT | RIGHT) ? 1 : 0
+        stampedRelay ? RELAY_STAMP : this.level.gates.some((g) => atControl(this.player, g)) || !!(this.level.patrol && near(this.player, this.level.patrol.bell)) ? 2 : input & USE ? 3 : input & (UP | DOWN | LEFT | RIGHT) ? 1 : 0
       );
       this.tick++;
       this.elapsed++;
@@ -815,6 +866,15 @@
     );
   }
   var trophies = {
+    "Midnight Postmark": [
+      "...abbba..",
+      "...bfcca..",
+      "....ac....",
+      "..aabbba..",
+      ".abffffba.",
+      "abccccccba",
+      ".dddddddd."
+    ],
     "Bearer bonds": [
       "..aaaaaaa.",
       ".abbbffffa",
@@ -971,6 +1031,16 @@
         const label = k.label ?? String.fromCharCode(65 + i);
         if (k.kind !== "automatic") {
           const a = pos(k.source), on = s2.actors.some((e) => !e.caught && atControl(e, k)), col = k.kind === "pulse" ? "#8ebdff" : violet;
+          if (k.kind === "pulse" && k.phase) {
+            const armed = k.phase === s2.phase;
+            tag(
+              g,
+              a.x,
+              a.y - 19,
+              armed ? "ARMED" : "OFFLINE",
+              armed ? amber : "#afbac9"
+            );
+          }
           if (on && (!k.phase || k.phase === s2.phase)) {
             g.glow(a.x, a.y, 34, "#bba1ff66");
             const light2 = i % 2 ? "#c6a2f2" : "#82c8b3";
@@ -995,7 +1065,7 @@
             g,
             a.x,
             a.y + 11,
-            (k.kind === "pulse" ? "PULSE " : "PAD ") + label,
+            (k.kind === "pulse" ? k.phase ? "RELAY " : "PULSE " : "PAD ") + label,
             col
           );
         }
@@ -1042,7 +1112,7 @@
           g.rect(
             b.x - 10,
             b.y - 14,
-            20 * Math.max(0, s2.pulses[i] - s2.tick) / 150,
+            20 * Math.max(0, s2.pulses[i] - s2.tick) / PULSE_TICKS,
             2,
             "#9ac6ff"
           );
@@ -1203,6 +1273,10 @@
         l.bonus,
         ...l.gates.flatMap((g) => g.kind === "pulse" ? [g.source] : [])
       ].some((p2) => p2.x === to.x && p2.y === to.y);
+      if (l.signalBox && to.x === l.loot.x && to.y === l.loot.y) {
+        this.use = near(from, l.loot, 205);
+        if (this.use) this.points = [];
+      }
       return true;
     }
     next(s2) {
@@ -1296,6 +1370,7 @@
         }
       }
       if (cue === "pulse") this.tone(600, 1100, 0.22, "sine", 0.16);
+      if (cue === "relayOffline") this.tone(245, 148, 0.09, "triangle", 0.17);
       if (cue === "empty") this.tone(95, 90, 0.07, "sine", 0.12);
     }
     music() {
@@ -1593,6 +1668,54 @@
     const node = el(id);
     if (node.textContent !== value) node.textContent = value;
   }
+  function dispatchStatus(s2) {
+    const box = s2.level.signalBox;
+    if (!box) return;
+    const relay = s2.level.gates.findIndex((g) => g.kind === "pulse");
+    const gate2 = s2.level.gates[relay];
+    const atPostmark = near(s2.player, s2.level.loot, 205);
+    let recorded = false, pending = false, clerkThrough = false, ready = false;
+    const nextStamp = s2.tick + (s2.phase === "normal" ? 1 : 0);
+    for (const [i, tape] of s2.tracks.entries()) {
+      if (!tape.activity.includes(RELAY_STAMP)) continue;
+      recorded = true;
+      const a = s2.actors[i];
+      const through = !a.caught && a.x - RADIUS >= box.min.x * UNIT && a.x + RADIUS < (box.max.x + 1) * UNIT && a.y >= box.min.y * UNIT && a.y < (box.max.y + 1) * UNIT;
+      const upcoming = tape.activity.includes(RELAY_STAMP, nextStamp);
+      clerkThrough || (clerkThrough = through);
+      pending || (pending = upcoming);
+      ready || (ready = through && upcoming);
+    }
+    if (s2.phase === "normal") {
+      if (atControl(s2.player, gate2))
+        return s2.activity.includes(RELAY_STAMP) ? "Offline stamp recorded. Rewind to give this job to your Echo." : "Relay R offline. Press E to put a stamp on your tape.";
+      if (!atPostmark) return;
+      if (ready)
+        return "Shutter S clear. Take the postmark now with E or a second click.";
+      if (pending) return "Wait here. Your clerk still has to cross shutter S.";
+      if (recorded)
+        return "Too late for this stamp. Press T to retry with this crew.";
+      return "Record an Echo pressing E at relay R before taking the postmark.";
+    }
+    if (s2.player.x - RADIUS >= (gate2.x + 1) * UNIT && s2.player.y > (box.max.y + 1) * UNIT)
+      return "Dispatch cleared. Take the green EXIT or collect the violet intel first.";
+    const left = s2.pulses[relay] - s2.tick;
+    if (left > 0)
+      return left <= HZ ? "Gate R closing. Cross the striped threshold now." : "Dispatch pulse! Gate R is open. Head east to EXIT.";
+    if (s2.doors[relay]) return "Gate R interlock engaged. Finish crossing.";
+    if (s2.pulses[relay] && !pending)
+      return "Gate R closed. The dispatch pulse expired. Press T to try again.";
+    const shutter = s2.level.gates.findIndex(
+      (g) => g.kind === "automatic" && g.phase === "normal"
+    );
+    if (!recorded)
+      return "No stamp on tape. Record an Echo using the offline relay R.";
+    if (!s2.doors[shutter] && !clerkThrough)
+      return "Too early. Shutter S sealed the clerk out. Press T and let them cross.";
+    if (!pending)
+      return "Too late. Relay R needed lockdown before the stamp. Press T to retry.";
+    return "Relay R armed. Move toward gate R while your clerk approaches the stamp.";
+  }
   var Timeline = class {
     constructor() {
       __publicField(this, "count", -1);
@@ -1630,8 +1753,9 @@
         const a = live ? s2.activity : s2.tracks[i].activity;
         g.fillStyle = color;
         for (let n = 0; n < a.length; n += 3) {
-          const v = Math.max(a[n], a[n + 1] || 0, a[n + 2] || 0), h = [2, 4, 8, 10][v];
-          g.fillRect(n / 3, 10 - h, 1, h);
+          const v = Math.max(a[n], a[n + 1] || 0, a[n + 2] || 0), h = [2, 4, 8, 10, 10][v];
+          g.fillStyle = v === RELAY_STAMP ? "#ffd877" : color;
+          g.fillRect(n / 3, 10 - h, v === RELAY_STAMP ? 3 : 1, h);
         }
         if (!live && a.at(-1) === 2) {
           g.globalAlpha = 0.32;
@@ -1824,6 +1948,8 @@
     if (s.player.caught)
       return "Sentry contact. Retry this loop or rewind to keep its recording.";
     if (s.paused) return "Timeline suspended. Your crew is waiting.";
+    const dispatch = dispatchStatus(s);
+    if (dispatch) return dispatch;
     if (near(s.player, s.level.loot, 205) && !s.loot)
       return "Press E to steal the " + s.level.item.toLowerCase() + ".";
     if (near(s.player, s.level.bonus, 190) && !s.bonus)
@@ -1938,7 +2064,7 @@
     previousPause = s.paused;
     s.paused = true;
     clearInput();
-    el("dialog-content").innerHTML = '<div class="eyebrow">Operator handbook</div><h3>Work with your past.</h3><p>Click a floor tile to walk there, or use the keyboard. Click loot to collect it. Rewind to keep the route you just ran. Each Echo starts with you, repeats its inputs, then waits where its tape ends.</p><dl><dt>WASD / Arrows</dt><dd>Move</dd><dt>E</dt><dd>Take loot or intel, pulse a relay</dd><dt>R / Z</dt><dd>Record an Echo / undo the last Echo</dd><dt>T / X</dt><dd>Retry with your crew / restart contract</dd><dt>Space</dt><dd>Start the clock while standing still</dd><dt>P / Esc</dt><dd>Pause or resume</dd><dt>M</dt><dd>Toggle audio</dd></dl><p>Beat or match the medal times in Contract Select. The timer adds up every loop. Crew par is ' + s.level.par + ' loops on this contract.</p><button class="primary" id="dismiss">Back to the heist</button>';
+    el("dialog-content").innerHTML = '<div class="eyebrow">Operator handbook</div><h3>Work with your past.</h3><p>Click a floor tile to walk there, or use the keyboard. Click loot to collect it. In The Window, click the postmark to approach, then click it again to steal. Rewind to keep the route you just ran. Each Echo starts with you, repeats its inputs, then waits where its tape ends.</p><dl><dt>WASD / Arrows</dt><dd>Move</dd><dt>E</dt><dd>Take loot or intel, pulse a relay</dd><dt>R / Z</dt><dd>Record an Echo / undo the last Echo</dd><dt>T / X</dt><dd>Retry with your crew / restart contract</dd><dt>Space</dt><dd>Start the clock while standing still</dd><dt>P / Esc</dt><dd>Pause or resume</dd><dt>M</dt><dd>Toggle audio</dd></dl><p>Beat or match the medal times in Contract Select. The timer adds up every loop. Crew par is ' + s.level.par + ' loops on this contract.</p><button class="primary" id="dismiss">Back to the heist</button>';
     dialog.showModal();
     el("dismiss").onclick = () => dialog.close();
     hud();
@@ -1969,7 +2095,13 @@
           cue === "loot" ? "Loot secured. Move to the green EXIT pad." : "Bonus intel secured."
         );
       }
-      if (cue === "lockdown") say("LOCKDOWN \xB7 A/B sealing. H released. Hold C for maintenance extraction.", 4);
+      if (s.level.signalBox && ["lockdown", "pulse", "relayOffline"].includes(cue))
+        notice = "";
+      if (cue === "lockdown" && !s.level.signalBox)
+        say(
+          "LOCKDOWN \xB7 A/B sealing. H released. Hold C for maintenance extraction.",
+          4
+        );
       if (cue === "clear") {
         const r = result(s);
         newRecord = better(r, save.records[index]);

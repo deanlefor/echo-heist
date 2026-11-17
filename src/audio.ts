@@ -82,6 +82,7 @@ export class AudioDeck {
       }
     }
     if (cue === "pulse") this.tone(600, 1100, 0.22, "sine", 0.16);
+    if (cue === "relayOffline") this.tone(245, 148, 0.09, "triangle", 0.17);
     if (cue === "empty") this.tone(95, 90, 0.07, "sine", 0.12);
   }
   music() {

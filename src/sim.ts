@@ -4,6 +4,8 @@ export const HZ = 60,
   UNIT = 240,
   SPEED = 15,
   RADIUS = 46;
+export const PULSE_TICKS = 150;
+export const RELAY_STAMP = 4; // Timeline activity for a recorded emergency relay USE.
 export const UP = 1,
   DOWN = 2,
   LEFT = 4,
@@ -28,6 +30,7 @@ export type Cue =
   | "lockdown"
   | "door"
   | "lock"
+  | "relayOffline"
   | "pulse"
   | "loot"
   | "bonus"
@@ -214,18 +217,30 @@ export class Heist {
       !!(input & USE) &&
       !this.loot &&
       near(this.player, this.level.loot, 205);
+    const previousPhase = this.phase;
+    let stampedRelay = false;
     if (takingLoot && this.level.lockdownOnLoot) this.phase = "lockdown";
     this.level.gates.forEach((g, i) => {
       const enabled = !g.phase || g.phase === this.phase;
       if (
-        enabled &&
         g.kind === "pulse" &&
         this.actors.some(
           (a, n) => !a.caught && inputs[n] & USE && atControl(a, g),
         )
       ) {
-        this.pulses[i] = this.tick + 150;
-        this.cues.push("pulse");
+        // USE is an edge on the tape. A phase-gated relay must already be
+        // armed when the input arrives; a simultaneous theft cannot bank it.
+        stampedRelay ||=
+          !!g.phase &&
+          !!(input & USE) &&
+          atControl(this.player, g) &&
+          !this.player.caught;
+        if (enabled && (!g.phase || g.phase === previousPhase)) {
+          this.pulses[i] = this.tick + PULSE_TICKS;
+          this.cues.push("pulse");
+        } else {
+          this.cues.push("relayOffline");
+        }
       }
       // Keep a closing door safe until the last overlapping actor has crossed.
       const held =
@@ -262,14 +277,16 @@ export class Heist {
       }
     }
     this.activity.push(
-      this.level.gates.some((g) => atControl(this.player, g)) ||
-        !!(this.level.patrol && near(this.player, this.level.patrol.bell))
-        ? 2
-        : input & USE
-          ? 3
-          : input & (UP | DOWN | LEFT | RIGHT)
-            ? 1
-            : 0,
+      stampedRelay
+        ? RELAY_STAMP
+        : this.level.gates.some((g) => atControl(this.player, g)) ||
+            !!(this.level.patrol && near(this.player, this.level.patrol.bell))
+          ? 2
+          : input & USE
+            ? 3
+            : input & (UP | DOWN | LEFT | RIGHT)
+              ? 1
+              : 0,
     );
     this.tick++;
     this.elapsed++;

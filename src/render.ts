@@ -1,5 +1,5 @@
 import { Pixels, noise, runner, ECHO_COLORS } from "./pixels.ts";
-import { Heist, UNIT, near, atControl, LIMIT } from "./sim.ts";
+import { Heist, UNIT, near, atControl, LIMIT, PULSE_TICKS } from "./sim.ts";
 import type { Point, Level } from "./levels.ts";
 const T = 24,
   OX = 23,
@@ -232,6 +232,15 @@ function diamond(g: Pixels, x: number, y: number, small: boolean, t: number) {
   );
 }
 const trophies: Record<string, string[]> = {
+  "Midnight Postmark": [
+    "...abbba..",
+    "...bfcca..",
+    "....ac....",
+    "..aabbba..",
+    ".abffffba.",
+    "abccccccba",
+    ".dddddddd.",
+  ],
   "Bearer bonds": [
     "..aaaaaaa.",
     ".abbbffffa",
@@ -393,6 +402,16 @@ export class Feed {
         const a = pos(k.source),
           on = s.actors.some((e) => !e.caught && atControl(e, k)),
           col = k.kind === "pulse" ? "#8ebdff" : violet;
+        if (k.kind === "pulse" && k.phase) {
+          const armed = k.phase === s.phase;
+          tag(
+            g,
+            a.x,
+            a.y - 19,
+            armed ? "ARMED" : "OFFLINE",
+            armed ? amber : "#afbac9",
+          );
+        }
         if (on && (!k.phase || k.phase === s.phase)) {
           g.glow(a.x, a.y, 34, "#bba1ff66");
           const light = i % 2 ? "#c6a2f2" : "#82c8b3";
@@ -419,7 +438,8 @@ export class Feed {
           g,
           a.x,
           a.y + 11,
-          (k.kind === "pulse" ? "PULSE " : "PAD ") + label,
+          (k.kind === "pulse" ? (k.phase ? "RELAY " : "PULSE ") : "PAD ") +
+            label,
           col,
         );
       }
@@ -472,7 +492,7 @@ export class Feed {
         g.rect(
           b.x - 10,
           b.y - 14,
-          (20 * Math.max(0, s.pulses[i] - s.tick)) / 150,
+          (20 * Math.max(0, s.pulses[i] - s.tick)) / PULSE_TICKS,
           2,
           "#9ac6ff",
         );

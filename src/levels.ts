@@ -25,6 +25,8 @@ export interface Level {
   gates: Gate[];
   patrol?: Patrol;
   lockdownOnLoot?: boolean;
+  // A staffed signal box gives the runner a visible cue to authorize the theft.
+  signalBox?: { min: Point; max: Point };
   zones?: { name: string; firstColumn: number }[];
   victory?: { eyebrow: string; title: string };
   par: number;
@@ -233,6 +235,48 @@ export const lockdown: Level = {
   ],
   medalTimes: { bronze: 58, silver: 40, gold: 30 },
 };
+export const theWindow: Level = {
+  title: "The Window",
+  site: "Meridian Dead Letter Office",
+  item: "Midnight Postmark",
+  brief:
+    "Take the postmark after your clerk crosses shutter S and before they stamp relay R. The dispatch gate opens for one short pulse.",
+  hint: "Leave an Echo on A. Record another walking through S to the blue relay and pressing E, even while offline. On take three, click the postmark to stand ready. Watch the clerk, take it with E, then move for dispatch.",
+  quip: "Delivered yesterday. Signed for tomorrow.",
+  victory: { eyebrow: "Postmark cancelled", title: "Right on time." },
+  tiles: [
+    "#######################",
+    "##......######.......##",
+    "#...SS.....#.C..S.....#",
+    "#.....................#",
+    "#.......C..#..C.......#",
+    "##..###################",
+    "##..###......S..#.....#",
+    "#.....#.........#.....#",
+    "#..........CC.........#",
+    "#.....#.........#.....#",
+    "#....S#...C.....#...C.#",
+    "#######################",
+  ],
+  start: p(3, 8),
+  exit: p(20, 7),
+  loot: p(8, 8),
+  bonus: p(18, 10),
+  gates: [
+    { ...gate(6, 8, 2, 9), label: "A", phase: "normal" },
+    { x: 11, y: 3, kind: "automatic", phase: "normal", label: "S" },
+    { ...gate(16, 8, 20, 2, "pulse"), label: "R", phase: "lockdown" },
+  ],
+  lockdownOnLoot: true,
+  signalBox: { min: p(12, 1), max: p(21, 4) },
+  par: 3,
+  zones: [
+    { name: "INTAKE", firstColumn: 1 },
+    { name: "SORTING", firstColumn: 7 },
+    { name: "DISPATCH", firstColumn: 17 },
+  ],
+  medalTimes: { bronze: 42, silver: 29, gold: 20 },
+};
 export const levels: Level[] = [
   first,
   company,
@@ -240,4 +284,5 @@ export const levels: Level[] = [
   timing,
   score,
   lockdown,
+  theWindow,
 ];

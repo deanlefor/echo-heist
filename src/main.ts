@@ -15,7 +15,7 @@ import { Feed } from "./render.ts";
 import { PointerRoute } from "./input.ts";
 import { AudioDeck } from "./audio.ts";
 import { skyline, wordmark } from "./skyline.ts";
-import { el, digits, text, icons, icon, Timeline } from "./ui.ts";
+import { el, digits, text, icons, icon, Timeline, dispatchStatus } from "./ui.ts";
 import { readSave, writeSave, result, better, medals, tiers, formatTime } from "./save.ts";
 const save = readSave(),
   audio = new AudioDeck(),
@@ -162,6 +162,8 @@ function contextual() {
   if (s.player.caught)
     return "Sentry contact. Retry this loop or rewind to keep its recording.";
   if (s.paused) return "Timeline suspended. Your crew is waiting.";
+  const dispatch = dispatchStatus(s);
+  if (dispatch) return dispatch;
   if (near(s.player, s.level.loot, 205) && !s.loot)
     return "Press E to steal the " + s.level.item.toLowerCase() + ".";
   if (near(s.player, s.level.bonus, 190) && !s.bonus)
@@ -341,7 +343,7 @@ function help() {
   s.paused = true;
   clearInput();
   el("dialog-content").innerHTML =
-    '<div class="eyebrow">Operator handbook</div><h3>Work with your past.</h3><p>Click a floor tile to walk there, or use the keyboard. Click loot to collect it. Rewind to keep the route you just ran. Each Echo starts with you, repeats its inputs, then waits where its tape ends.</p><dl><dt>WASD / Arrows</dt><dd>Move</dd><dt>E</dt><dd>Take loot or intel, pulse a relay</dd><dt>R / Z</dt><dd>Record an Echo / undo the last Echo</dd><dt>T / X</dt><dd>Retry with your crew / restart contract</dd><dt>Space</dt><dd>Start the clock while standing still</dd><dt>P / Esc</dt><dd>Pause or resume</dd><dt>M</dt><dd>Toggle audio</dd></dl><p>Beat or match the medal times in Contract Select. The timer adds up every loop. Crew par is ' +
+    '<div class="eyebrow">Operator handbook</div><h3>Work with your past.</h3><p>Click a floor tile to walk there, or use the keyboard. Click loot to collect it. In The Window, click the postmark to approach, then click it again to steal. Rewind to keep the route you just ran. Each Echo starts with you, repeats its inputs, then waits where its tape ends.</p><dl><dt>WASD / Arrows</dt><dd>Move</dd><dt>E</dt><dd>Take loot or intel, pulse a relay</dd><dt>R / Z</dt><dd>Record an Echo / undo the last Echo</dd><dt>T / X</dt><dd>Retry with your crew / restart contract</dd><dt>Space</dt><dd>Start the clock while standing still</dd><dt>P / Esc</dt><dd>Pause or resume</dd><dt>M</dt><dd>Toggle audio</dd></dl><p>Beat or match the medal times in Contract Select. The timer adds up every loop. Crew par is ' +
     s.level.par +
     ' loops on this contract.</p><button class="primary" id="dismiss">Back to the heist</button>';
   dialog.showModal();
@@ -382,7 +384,16 @@ function effects() {
           : "Bonus intel secured.",
       );
     }
-    if (cue === "lockdown") say("LOCKDOWN · A/B sealing. H released. Hold C for maintenance extraction.", 4);
+    if (
+      s.level.signalBox &&
+      ["lockdown", "pulse", "relayOffline"].includes(cue)
+    )
+      notice = "";
+    if (cue === "lockdown" && !s.level.signalBox)
+      say(
+        "LOCKDOWN · A/B sealing. H released. Hold C for maintenance extraction.",
+        4,
+      );
     if (cue === "clear") {
       const r = result(s);
       newRecord = better(r, save.records[index]);

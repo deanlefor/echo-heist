@@ -1,5 +1,5 @@
 import type { Level, Point, SecurityPhase } from "./levels.ts";
-import { center, tile, SPEED, LEFT, RIGHT, UP, DOWN, USE } from "./sim.ts";
+import { center, tile, near, SPEED, LEFT, RIGHT, UP, DOWN, USE } from "./sim.ts";
 import type { Heist } from "./sim.ts";
 // Pointer routes generate ordinary movement inputs. Playback never runs the planner.
 export class PointerRoute {
@@ -56,6 +56,11 @@ export class PointerRoute {
       l.bonus,
       ...l.gates.flatMap((g) => (g.kind === "pulse" ? [g.source] : [])),
     ].some((p) => p.x === to.x && p.y === to.y);
+    // Approaching the postmark stages the runner. A click in reach confirms theft.
+    if (l.signalBox && to.x === l.loot.x && to.y === l.loot.y) {
+      this.use = near(from, l.loot, 205);
+      if (this.use) this.points = [];
+    }
     return true;
   }
   next(s: Heist): number {
