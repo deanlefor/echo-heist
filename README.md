@@ -39,7 +39,7 @@ The timeline shows movement as low bars and time spent at a device as tall bars.
 
 ## Mastery
 
-Bring back the violet intel, meet the contract’s loop budget and beat or match its time target for gold. Meeting either efficiency condition earns silver. Any successful escape earns at least bronze. The handbook shows the current contract’s targets. Personal bests rank medal first, then fewer loops, then lower total time.
+Contract Select shows your fastest clear for each job and the selected contract’s Bronze, Silver and Gold targets. Match or beat a target to earn that medal. A slower escape still counts as a clear. Times include all active loops. Equal times favor fewer loops, then collected bonus intel. Existing saved runs receive the medal for their recorded time.
 
 ## Build and verify
 

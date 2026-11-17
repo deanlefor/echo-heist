@@ -34,7 +34,7 @@
     bonus: p(19, 2),
     gates: [gate(8, 6, 5, 3), gate(16, 6, 13, 8)],
     par: 3,
-    target: 24
+    medalTimes: { bronze: 45, silver: 30, gold: 20 }
   };
   var first = {
     title: "The First Echo",
@@ -63,7 +63,7 @@
     bonus: p(19, 2),
     gates: [gate(11, 6, 7, 3)],
     par: 2,
-    target: 20
+    medalTimes: { bronze: 35, silver: 22, gold: 15 }
   };
   var distraction = {
     title: "The Distraction",
@@ -93,7 +93,7 @@
     gates: [],
     patrol: { from: p(15, 6), to: p(16, 6), look: p(-1, 0), bell: p(6, 3) },
     par: 2,
-    target: 24
+    medalTimes: { bronze: 38, silver: 24, gold: 15 }
   };
   var timing = {
     title: "Perfect Timing",
@@ -122,7 +122,7 @@
     bonus: p(16, 9),
     gates: [gate(14, 7, 4, 2, "pulse")],
     par: 2,
-    target: 17
+    medalTimes: { bronze: 30, silver: 18, gold: 12 }
   };
   var score = {
     title: "The Big Score",
@@ -152,7 +152,7 @@
     gates: [gate(8, 6, 5, 3), gate(16, 6, 10, 2, "pulse")],
     patrol: { from: p(18, 6), to: p(19, 6), look: p(-1, 0), bell: p(10, 8) },
     par: 4,
-    target: 37
+    medalTimes: { bronze: 50, silver: 32, gold: 20 }
   };
   var levels = [first, company, distraction, timing, score];
 
@@ -1557,12 +1557,15 @@
     try {
       const data = JSON.parse(localStorage.getItem(key) || "null");
       if (!data || typeof data !== "object") return fallback;
-      if (Number.isInteger(data.selected) && data.selected >= 0 && data.selected < 5)
+      if (Number.isInteger(data.selected) && data.selected >= 0 && data.selected < levels.length)
         fallback.selected = data.selected;
       fallback.muted = data.muted === true;
       for (const [k, r] of Object.entries(data.records || {})) {
-        if (r && Number.isInteger(r.loops) && r.loops > 0 && Number.isInteger(r.ticks) && r.ticks > 0 && [1, 2, 3].includes(r.medal) && typeof r.bonus === "boolean")
-          fallback.records[Number(k)] = r;
+        if (Object.hasOwn(levels, k) && /^\d+$/.test(k) && r && Number.isInteger(r.loops) && r.loops > 0 && Number.isInteger(r.ticks) && r.ticks > 0 && typeof r.bonus === "boolean")
+          fallback.records[Number(k)] = {
+            ...r,
+            medal: timeMedal(levels[Number(k)], r.ticks)
+          };
       }
     } catch {
     }
@@ -1574,19 +1577,27 @@
     } catch {
     }
   }
+  var tiers = ["bronze", "silver", "gold"];
+  var medals = ["Cleared", "Bronze", "Silver", "Gold"];
+  function timeMedal(level, ticks) {
+    return tiers.filter((tier) => ticks <= level.medalTimes[tier] * HZ).length;
+  }
+  function formatTime(ticks) {
+    return (ticks / HZ).toFixed(2) + "s";
+  }
   function result(s2) {
-    const efficient = s2.attempts <= s2.level.par, fast = s2.elapsed <= s2.level.target * 60;
     return {
       loops: s2.attempts,
       ticks: s2.elapsed,
       bonus: s2.bonus,
-      medal: efficient && fast && s2.bonus ? 3 : efficient || fast ? 2 : 1
+      medal: timeMedal(s2.level, s2.elapsed)
     };
   }
   function better(a, b) {
-    return !b || a.medal > b.medal || a.medal === b.medal && (a.loops < b.loops || a.loops === b.loops && a.ticks < b.ticks);
+    if (!b || a.ticks !== b.ticks) return !b || a.ticks < b.ticks;
+    if (a.loops !== b.loops) return a.loops < b.loops;
+    return a.bonus && !b.bonus;
   }
-  var medals = ["", "Bronze", "Silver", "Gold"];
 
   // src/main.ts
   var save = readSave();
@@ -1661,9 +1672,10 @@
       const b = document.createElement("button"), rec = save.records[i];
       b.className = "job" + (i === index ? " active" : "");
       b.setAttribute("aria-current", i === index ? "true" : "false");
-      b.innerHTML = '<span class="idx">' + digits(i + 1) + '</span><span class="jname">' + l.title + '</span><span class="mark">' + (rec ? "\u25C6" : i === index ? "\u25C2" : "\xB7") + "</span>";
-      if (rec)
-        b.title = medals[rec.medal] + " \xB7 " + rec.loops + " loops \xB7 " + (rec.ticks / 60).toFixed(2) + "s";
+      b.innerHTML = `<span class="idx">${digits(i + 1)}</span>
+      <span class="jname">${l.title}</span>
+      <span class="job-result">${rec ? `<strong>${formatTime(rec.ticks)}</strong><small class="rank-${rec.medal}">${medals[rec.medal]}</small>` : '<span aria-label="No clear yet">\u2014</span>'}</span>`;
+      if (rec) b.title = `Best in ${rec.loops} loops \xB7 Intel ${rec.bonus ? "secured" : "missed"}`;
       b.onclick = () => {
         if (i !== index) switchTo(i);
       };
@@ -1671,12 +1683,12 @@
     });
     text("completed", Object.keys(save.records).length + " / 5");
     const best = save.records[index];
-    el("best").hidden = !best;
-    if (best)
-      text(
-        "best",
-        "Best \xB7 " + medals[best.medal] + " \xB7 " + best.loops + " loops \xB7 " + (best.ticks / 60).toFixed(2) + "s"
-      );
+    el("medal-times").innerHTML = tiers.map((tier, i) => {
+      const next = (best?.medal ?? 0) === i;
+      return `<div class="tier rank-${i + 1}${next ? " next-tier" : ""}">
+      <dt>${medals[i + 1]}</dt><dd>${s.level.medalTimes[tier]}s</dd></div>`;
+    }).join("");
+    text("target-caption", best?.medal === 3 ? "Gold achieved" : "Next \xB7 " + medals[(best?.medal ?? 0) + 1]);
   }
   function switchTo(i) {
     index = i;
@@ -1749,7 +1761,7 @@
     if (!mode) return;
     if (mode === "won") {
       const r = result(s), best = save.records[index], final = index === levels.length - 1;
-      o.innerHTML = '<div class="seal">\u25C6</div><div class="eyebrow">' + (final ? "Blackstar recovered" : "Extraction confirmed") + "</div><h3>" + (final ? "The Big Score is yours." : "Clean getaway.") + "</h3><p>" + s.level.quip + '</p><div class="receipt">' + medals[r.medal] + " medal \xB7 " + r.loops + " loops \xB7 " + (r.ticks / 60).toFixed(2) + 's</div><div class="scoreline">' + (newRecord ? "Personal best" : "Best " + medals[best.medal] + " \xB7 " + best.loops + " loops \xB7 " + (best.ticks / 60).toFixed(2) + "s") + " \xB7 Intel " + (r.bonus ? "secured" : "missed") + '</div><div class="choices"><button class="primary" id="next">' + (final ? "Back to first contract" : "Next contract \u2192") + '</button><button id="replay">Replay</button></div>';
+      o.innerHTML = '<div class="seal">\u25C6</div><div class="eyebrow">' + (final ? "Blackstar recovered" : "Extraction confirmed") + "</div><h3>" + (final ? "The Big Score is yours." : "Clean getaway.") + "</h3><p>" + s.level.quip + '</p><div class="receipt">' + (r.medal ? medals[r.medal] + " medal" : "Contract cleared") + " \xB7 " + r.loops + " loops \xB7 " + (r.ticks / 60).toFixed(2) + 's</div><div class="scoreline">' + (newRecord ? "Personal best" : "Best " + medals[best.medal] + " \xB7 " + best.loops + " loops \xB7 " + (best.ticks / 60).toFixed(2) + "s") + " \xB7 Intel " + (r.bonus ? "secured" : "missed") + '</div><div class="choices"><button class="primary" id="next">' + (final ? "Back to first contract" : "Next contract \u2192") + '</button><button id="replay">Replay</button></div>';
       el("next").onclick = () => switchTo((index + 1) % levels.length);
       el("replay").onclick = () => switchTo(index);
     } else if (mode === "caught") {
@@ -1821,7 +1833,7 @@
     previousPause = s.paused;
     s.paused = true;
     clearInput();
-    el("dialog-content").innerHTML = '<div class="eyebrow">Operator handbook</div><h3>Work with your past.</h3><p>Click a floor tile to walk there, or use the keyboard. Click loot to collect it. Rewind to keep the route you just ran. Each Echo starts with you, repeats its inputs, then waits where its tape ends.</p><dl><dt>WASD / Arrows</dt><dd>Move</dd><dt>E</dt><dd>Take loot or intel, pulse a relay</dd><dt>R / Z</dt><dd>Record an Echo / undo the last Echo</dd><dt>T / X</dt><dd>Retry with your crew / restart contract</dd><dt>Space</dt><dd>Start the clock while standing still</dd><dt>P / Esc</dt><dd>Pause or resume</dd><dt>M</dt><dd>Toggle audio</dd></dl><p>Gold requires bonus intel, at most ' + s.level.par + " loops and a total time of " + s.level.target + 's or less on this contract.</p><button class="primary" id="dismiss">Back to the heist</button>';
+    el("dialog-content").innerHTML = '<div class="eyebrow">Operator handbook</div><h3>Work with your past.</h3><p>Click a floor tile to walk there, or use the keyboard. Click loot to collect it. Rewind to keep the route you just ran. Each Echo starts with you, repeats its inputs, then waits where its tape ends.</p><dl><dt>WASD / Arrows</dt><dd>Move</dd><dt>E</dt><dd>Take loot or intel, pulse a relay</dd><dt>R / Z</dt><dd>Record an Echo / undo the last Echo</dd><dt>T / X</dt><dd>Retry with your crew / restart contract</dd><dt>Space</dt><dd>Start the clock while standing still</dd><dt>P / Esc</dt><dd>Pause or resume</dd><dt>M</dt><dd>Toggle audio</dd></dl><p>Beat or match the medal times in Contract Select. The timer adds up every loop. Crew par is ' + s.level.par + ' loops on this contract.</p><button class="primary" id="dismiss">Back to the heist</button>';
     dialog.showModal();
     el("dismiss").onclick = () => dialog.close();
     hud();

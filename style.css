@@ -482,14 +482,38 @@ h2 i {
   font-size: 13px;
   font-weight: 600;
 }
-.job .mark {
+.score-head, .target-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.score-head {
+  padding: 12px 17px 0;
+  font: 9px var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--dim);
+}
+.job-result {
   margin-left: auto;
-  color: #8e96aa;
-  font: 12px var(--mono);
+  flex-shrink: 0;
+  text-align: right;
+  font: 11px var(--mono);
+  font-variant-numeric: tabular-nums;
 }
-.job.active .mark {
-  color: var(--mint);
-}
+.job-result small { display: block; font-size: 9px; margin-top: 2px; }
+.rank-1 { color: #dda484; }
+.rank-2 { color: #c7d3e2; }
+.rank-3 { color: var(--amber); }
+.contract-targets { border-top: 1px solid var(--edge); padding: 12px 14px; }
+.target-title strong { font-size: 12px; }
+.contract-targets small, #target-caption { color: var(--dim); font: 10px var(--mono); }
+#medal-times { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin: 9px 0 6px; }
+.tier { padding: 5px 7px; border: 1px solid var(--edge); border-radius: 3px; background: var(--inset); }
+.tier.next-tier { border-bottom-color: currentColor; }
+.tier dt { font: 10px var(--mono); }
+.tier dd { margin: 3px 0 0; font: bold 15px var(--mono); }
 .timeline .section-head {
   border: 0;
 }
@@ -905,11 +929,7 @@ dialog .primary {
   border-color: #816c9a;
   background: #272237;
 }
-.brief-body #best {
-  font: 10px/1.6 var(--mono);
-  color: var(--amber);
-  margin: 0 0 10px;
-}
+
 .lane .tape {
   min-width: 0;
   flex: 1;

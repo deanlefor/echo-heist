@@ -1,4 +1,5 @@
-import type { Heist } from "./sim.ts";
+import { HZ, type Heist } from "./sim.ts";
+import { levels, type Level } from "./levels.ts";
 export type Result = {
   loops: number;
   ticks: number;
@@ -19,7 +20,7 @@ export function readSave(): Save {
     if (
       Number.isInteger(data.selected) &&
       data.selected >= 0 &&
-      data.selected < 5
+      data.selected < levels.length
     )
       fallback.selected = data.selected;
     fallback.muted = data.muted === true;
@@ -28,15 +29,18 @@ export function readSave(): Save {
       Result,
     ][]) {
       if (
+        Object.hasOwn(levels, k) && /^\d+$/.test(k) &&
         r &&
         Number.isInteger(r.loops) &&
         r.loops > 0 &&
         Number.isInteger(r.ticks) &&
         r.ticks > 0 &&
-        [1, 2, 3].includes(r.medal) &&
         typeof r.bonus === "boolean"
       )
-        fallback.records[Number(k)] = r;
+        fallback.records[Number(k)] = {
+          ...r,
+          medal: timeMedal(levels[Number(k)], r.ticks),
+        };
     }
   } catch {
     /* Private storage and invalid saves still allow local play. */
@@ -50,22 +54,24 @@ export function writeSave(s: Save) {
     /* Storage can be disabled. */
   }
 }
+export const tiers = ["bronze", "silver", "gold"] as const;
+export const medals = ["Cleared", "Bronze", "Silver", "Gold"];
+export function timeMedal(level: Level, ticks: number) {
+  return tiers.filter(tier => ticks <= level.medalTimes[tier] * HZ).length;
+}
+export function formatTime(ticks: number) {
+  return (ticks / HZ).toFixed(2) + "s";
+}
 export function result(s: Heist): Result {
-  const efficient = s.attempts <= s.level.par,
-    fast = s.elapsed <= s.level.target * 60;
   return {
     loops: s.attempts,
     ticks: s.elapsed,
     bonus: s.bonus,
-    medal: efficient && fast && s.bonus ? 3 : efficient || fast ? 2 : 1,
+    medal: timeMedal(s.level, s.elapsed),
   };
 }
 export function better(a: Result, b?: Result) {
-  return (
-    !b ||
-    a.medal > b.medal ||
-    (a.medal === b.medal &&
-      (a.loops < b.loops || (a.loops === b.loops && a.ticks < b.ticks)))
-  );
+  if (!b || a.ticks !== b.ticks) return !b || a.ticks < b.ticks;
+  if (a.loops !== b.loops) return a.loops < b.loops;
+  return a.bonus && !b.bonus;
 }
-export const medals = ["", "Bronze", "Silver", "Gold"];

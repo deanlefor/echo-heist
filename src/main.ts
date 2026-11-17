@@ -16,7 +16,7 @@ import { PointerRoute } from "./input.ts";
 import { AudioDeck } from "./audio.ts";
 import { skyline, wordmark } from "./skyline.ts";
 import { el, digits, text, icons, icon, Timeline } from "./ui.ts";
-import { readSave, writeSave, result, better, medals } from "./save.ts";
+import { readSave, writeSave, result, better, medals, tiers, formatTime } from "./save.ts";
 const save = readSave(),
   audio = new AudioDeck(),
   clock = new Clock(),
@@ -95,22 +95,12 @@ function jobs() {
       rec = save.records[i];
     b.className = "job" + (i === index ? " active" : "");
     b.setAttribute("aria-current", i === index ? "true" : "false");
-    b.innerHTML =
-      '<span class="idx">' +
-      digits(i + 1) +
-      '</span><span class="jname">' +
-      l.title +
-      '</span><span class="mark">' +
-      (rec ? "◆" : i === index ? "◂" : "·") +
-      "</span>";
-    if (rec)
-      b.title =
-        medals[rec.medal] +
-        " · " +
-        rec.loops +
-        " loops · " +
-        (rec.ticks / 60).toFixed(2) +
-        "s";
+    b.innerHTML = `<span class="idx">${digits(i + 1)}</span>
+      <span class="jname">${l.title}</span>
+      <span class="job-result">${rec
+        ? `<strong>${formatTime(rec.ticks)}</strong><small class="rank-${rec.medal}">${medals[rec.medal]}</small>`
+        : '<span aria-label="No clear yet">—</span>'}</span>`;
+    if (rec) b.title = `Best in ${rec.loops} loops · Intel ${rec.bonus ? "secured" : "missed"}`;
     b.onclick = () => {
       if (i !== index) switchTo(i);
     };
@@ -118,18 +108,13 @@ function jobs() {
   });
   text("completed", Object.keys(save.records).length + " / 5");
   const best = save.records[index];
-  el("best").hidden = !best;
-  if (best)
-    text(
-      "best",
-      "Best · " +
-        medals[best.medal] +
-        " · " +
-        best.loops +
-        " loops · " +
-        (best.ticks / 60).toFixed(2) +
-        "s",
-    );
+  el("medal-times").innerHTML = tiers.map((tier, i) => {
+    const next = (best?.medal ?? 0) === i;
+    return `<div class="tier rank-${i + 1}${next ? " next-tier" : ""}">
+      <dt>${medals[i + 1]}</dt><dd>${s.level.medalTimes[tier]}s</dd></div>`;
+  }).join("");
+  text("target-caption", best?.medal === 3 ? "Gold achieved" : "Next · " + medals[(best?.medal ?? 0) + 1]);
+
 }
 function switchTo(i: number) {
   index = i;
@@ -233,8 +218,8 @@ function overlay() {
       "</h3><p>" +
       s.level.quip +
       '</p><div class="receipt">' +
-      medals[r.medal] +
-      " medal · " +
+      (r.medal ? medals[r.medal] + " medal" : "Contract cleared") +
+      " · " +
       r.loops +
       " loops · " +
       (r.ticks / 60).toFixed(2) +
@@ -346,11 +331,9 @@ function help() {
   s.paused = true;
   clearInput();
   el("dialog-content").innerHTML =
-    '<div class="eyebrow">Operator handbook</div><h3>Work with your past.</h3><p>Click a floor tile to walk there, or use the keyboard. Click loot to collect it. Rewind to keep the route you just ran. Each Echo starts with you, repeats its inputs, then waits where its tape ends.</p><dl><dt>WASD / Arrows</dt><dd>Move</dd><dt>E</dt><dd>Take loot or intel, pulse a relay</dd><dt>R / Z</dt><dd>Record an Echo / undo the last Echo</dd><dt>T / X</dt><dd>Retry with your crew / restart contract</dd><dt>Space</dt><dd>Start the clock while standing still</dd><dt>P / Esc</dt><dd>Pause or resume</dd><dt>M</dt><dd>Toggle audio</dd></dl><p>Gold requires bonus intel, at most ' +
+    '<div class="eyebrow">Operator handbook</div><h3>Work with your past.</h3><p>Click a floor tile to walk there, or use the keyboard. Click loot to collect it. Rewind to keep the route you just ran. Each Echo starts with you, repeats its inputs, then waits where its tape ends.</p><dl><dt>WASD / Arrows</dt><dd>Move</dd><dt>E</dt><dd>Take loot or intel, pulse a relay</dd><dt>R / Z</dt><dd>Record an Echo / undo the last Echo</dd><dt>T / X</dt><dd>Retry with your crew / restart contract</dd><dt>Space</dt><dd>Start the clock while standing still</dd><dt>P / Esc</dt><dd>Pause or resume</dd><dt>M</dt><dd>Toggle audio</dd></dl><p>Beat or match the medal times in Contract Select. The timer adds up every loop. Crew par is ' +
     s.level.par +
-    " loops and a total time of " +
-    s.level.target +
-    's or less on this contract.</p><button class="primary" id="dismiss">Back to the heist</button>';
+    ' loops on this contract.</p><button class="primary" id="dismiss">Back to the heist</button>';
   dialog.showModal();
   el("dismiss").onclick = () => dialog.close();
   hud();

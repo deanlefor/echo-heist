@@ -138,7 +138,6 @@
                 <i data-icon="shard"></i><span>Bonus intel</span
                 ><b id="bonus">Optional</b>
               </div>
-              <p id="best" hidden></p>
               <button id="hint">
                 <span><i data-icon="bulb"></i> Show hint</span><b>+</b>
               </button>
@@ -150,7 +149,13 @@
               <h2><i data-icon="stack"></i> Contract select</h2>
               <span class="filecode" id="completed">0 / 5</span>
             </div>
+            <div class="score-head"><span>Contract</span><span>Best time</span></div>
             <div id="jobs"></div>
+            <div class="contract-targets">
+              <div class="target-title"><strong>Medal times</strong><span id="target-caption"></span></div>
+              <dl id="medal-times" aria-label="Medal times for the selected contract"></dl>
+              <small>Total time across all loops</small>
+            </div>
           </section>
         </aside>
       </main>

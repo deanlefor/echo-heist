@@ -21,7 +21,7 @@ export interface Level {
   gates: Gate[];
   patrol?: Patrol;
   par: number;
-  target: number;
+  medalTimes: { bronze: number; silver: number; gold: number };
 }
 export const p = (x: number, y: number): Point => ({ x, y });
 export const gate = (
@@ -59,7 +59,7 @@ export const company: Level = {
   bonus: p(19, 2),
   gates: [gate(8, 6, 5, 3), gate(16, 6, 13, 8)],
   par: 3,
-  target: 24,
+  medalTimes: { bronze: 45, silver: 30, gold: 20 },
 };
 export const first: Level = {
   title: "The First Echo",
@@ -88,7 +88,7 @@ export const first: Level = {
   bonus: p(19, 2),
   gates: [gate(11, 6, 7, 3)],
   par: 2,
-  target: 20,
+  medalTimes: { bronze: 35, silver: 22, gold: 15 },
 };
 export const distraction: Level = {
   title: "The Distraction",
@@ -119,7 +119,7 @@ export const distraction: Level = {
   gates: [],
   patrol: { from: p(15, 6), to: p(16, 6), look: p(-1, 0), bell: p(6, 3) },
   par: 2,
-  target: 24,
+  medalTimes: { bronze: 38, silver: 24, gold: 15 },
 };
 export const timing: Level = {
   title: "Perfect Timing",
@@ -149,7 +149,7 @@ export const timing: Level = {
   bonus: p(16, 9),
   gates: [gate(14, 7, 4, 2, "pulse")],
   par: 2,
-  target: 17,
+  medalTimes: { bronze: 30, silver: 18, gold: 12 },
 };
 export const score: Level = {
   title: "The Big Score",
@@ -180,6 +180,6 @@ export const score: Level = {
   gates: [gate(8, 6, 5, 3), gate(16, 6, 10, 2, "pulse")],
   patrol: { from: p(18, 6), to: p(19, 6), look: p(-1, 0), bell: p(10, 8) },
   par: 4,
-  target: 37,
+  medalTimes: { bronze: 50, silver: 32, gold: 20 },
 };
 export const levels: Level[] = [first, company, distraction, timing, score];

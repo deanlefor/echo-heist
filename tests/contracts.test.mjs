@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { Heist, RIGHT, LEFT, DOWN, UP, USE, center, UNIT } from "../src/sim.ts";
 import { first, distraction, timing, score, levels } from "../src/levels.ts";
-import { result, better, readSave, writeSave } from "../src/save.ts";
+import { result, better, readSave, writeSave, timeMedal } from "../src/save.ts";
 const run = (s, cmd, count) => {
   for (let i = 0; i < count; i++) s.step(cmd);
 };
@@ -129,11 +129,21 @@ test("an Echo uses current collisions when a previously closed route opens", () 
   run(s, 0, 220);
   assert.ok(s.actors[0].x > originalEnd + UNIT * 3);
 });
-test("scores rank medals, then fewer loops, then lower total elapsed ticks", () => {
+test("medal cutoffs include the exact tick for every contract", () => {
+  for (const level of levels) {
+    const {gold, silver, bronze} = level.medalTimes;
+    for (const [seconds, medal] of [[gold, 3], [silver, 2], [bronze, 1]]) {
+      assert.equal(timeMedal(level, seconds * 60), medal);
+      assert.equal(timeMedal(level, seconds * 60 + 1), medal - 1);
+    }
+  }
+});
+test("best clears rank time first, then loops and intel on a tie", () => {
   const r = { medal: 2, loops: 3, ticks: 900, bonus: false };
-  assert.ok(better({ ...r, medal: 3 }, r));
+  assert.ok(better({ ...r, ticks: 899, loops: 4 }, r));
+  assert.equal(better({ ...r, ticks: 901, loops: 2 }, r), false);
   assert.ok(better({ ...r, loops: 2 }, r));
-  assert.ok(better({ ...r, ticks: 899 }, r));
+  assert.ok(better({ ...r, bonus: true }, r));
   assert.equal(better(r, r), false);
 });
 test("local progress round-trips and malformed saves recover safely", () => {
@@ -147,9 +157,15 @@ test("local progress round-trips and malformed saves recover safely", () => {
   const save = readSave();
   save.selected = 3;
   save.muted = true;
-  save.records[1] = { loops: 3, medal: 2, ticks: 721, bonus: false };
+  save.records[1] = { loops: 3, medal: 3, ticks: 721, bonus: false };
   writeSave(save);
   assert.deepEqual(readSave(), save);
+  const legacy = JSON.parse(stored);
+  legacy.records[1].medal = 1;
+  legacy.records[0] = { loops: 6, medal: 1, ticks: 3600, bonus: true };
+  stored = JSON.stringify(legacy);
+  assert.deepEqual(readSave().records[1], save.records[1]);
+  assert.deepEqual(readSave().records[0], {...legacy.records[0], medal: 0});
   stored = "{broken";
   assert.equal(readSave().selected, 0);
   delete globalThis.localStorage;
