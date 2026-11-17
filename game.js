@@ -1,8 +1,8 @@
 "use strict";
 (() => {
   var __defProp = Object.defineProperty;
-  var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-  var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
+  var __defNormalProp = (obj, key2, value) => key2 in obj ? __defProp(obj, key2, { enumerable: true, configurable: true, writable: true, value }) : obj[key2] = value;
+  var __publicField = (obj, key2, value) => __defNormalProp(obj, typeof key2 !== "symbol" ? key2 + "" : key2, value);
 
   // src/levels.ts
   var p = (x, y) => ({ x, y });
@@ -16,15 +16,15 @@
     quip: "Three accomplices. One suspiciously familiar alibi.",
     tiles: [
       "#######################",
-      "##......#.......#....##",
+      "##.SS...#..SS...#....##",
       "#.......#.......#.....#",
       "#.......#.......#.....#",
-      "#.......#..##...#.....#",
+      "#.CC....#..CC...#..SS.#",
       "#.......#.......#.....#",
       "#.....................#",
       "#.......#.......#.....#",
       "#.......#.......#.....#",
-      "#..##...#.......#.....#",
+      "#..CC...#....CC.#..CC.#",
       "##......#......##....##",
       "#######################"
     ],
@@ -36,6 +36,125 @@
     par: 3,
     target: 24
   };
+  var first = {
+    title: "The First Echo",
+    site: "Meridian Depository",
+    item: "Prism core",
+    brief: "Lift the prism core from the vault and return to the extraction pad.",
+    hint: "Stand on pad A and press R. Your Echo will hold the door while you collect the core with E.",
+    quip: "Meridian has filed a complaint against both of you.",
+    tiles: [
+      "#######################",
+      "###SS....######....SS##",
+      "##........#####.......#",
+      "#..........#..........#",
+      "#.CC.......#.......CC.#",
+      "#..........#..........#",
+      "#.....................#",
+      "#..........#..........#",
+      "#.....CC...#..CC......#",
+      "##.........#......SSS.#",
+      "###SS.....###........##",
+      "#######################"
+    ],
+    start: p(4, 6),
+    exit: p(3, 8),
+    loot: p(18, 5),
+    bonus: p(19, 2),
+    gates: [gate(11, 6, 7, 3)],
+    par: 2,
+    target: 20
+  };
+  var distraction = {
+    title: "The Distraction",
+    site: "Hushline Archives",
+    item: "Voice cipher",
+    brief: "Draw the sentry away with the floor buzzer. Slip past its sightline and steal the voice cipher.",
+    hint: "Leave an Echo on the buzzer. The guard investigates for as long as someone keeps it ringing.",
+    quip: "The guard insists the floor called him first.",
+    tiles: [
+      "#######################",
+      "####SSS...####....SS###",
+      "##........####........#",
+      "#..........###.....CC.#",
+      "#..CC......###........#",
+      "#..........###........#",
+      "#.....................#",
+      "#..........###........#",
+      "#..........###.....CC.#",
+      "##..SS....####........#",
+      "###......#####....SS###",
+      "#######################"
+    ],
+    start: p(3, 6),
+    exit: p(2, 7),
+    loot: p(19, 5),
+    bonus: p(18, 8),
+    gates: [],
+    patrol: { from: p(15, 6), to: p(16, 6), look: p(-1, 0), bell: p(6, 3) },
+    par: 2,
+    target: 24
+  };
+  var timing = {
+    title: "Perfect Timing",
+    site: "Pendulum Works",
+    item: "Phase crystal",
+    brief: "Pulse the relay to open the shutter for 2.5 seconds. Take the crystal to the far lift.",
+    hint: "Walk to the relay and tap E. Rewind. On the next run, head straight for the shutter while your Echo repeats the pulse.",
+    quip: "The clockwork was perfect. The payroll was off by one.",
+    tiles: [
+      "#######################",
+      "##.....SS...####...SS##",
+      "#...........###.......#",
+      "#.......CC...##.......#",
+      "#.......CC...##.......#",
+      "#............##...CC..#",
+      "#............##.......#",
+      "#.....................#",
+      "#............##.......#",
+      "##..SS......###.......#",
+      "###........####....SS##",
+      "#######################"
+    ],
+    start: p(3, 7),
+    exit: p(20, 8),
+    loot: p(18, 3),
+    bonus: p(16, 9),
+    gates: [gate(14, 7, 4, 2, "pulse")],
+    par: 2,
+    target: 17
+  };
+  var score = {
+    title: "The Big Score",
+    site: "Parallax Treasury",
+    item: "Blackstar diamond",
+    brief: "Beat the pressure lock, divert the guard and pulse the inner vault. Get the Blackstar to the east lift.",
+    hint: "Assign one Echo to pad A and another to the buzzer. Record a relay pulse after both reach their posts, then make the final dash.",
+    quip: "Four faces on camera. Somehow, only one name on the invoice.",
+    tiles: [
+      "#######################",
+      "##.SS...#...SS..#....##",
+      "#.......#.......#.....#",
+      "#.......#.......#.....#",
+      "#..CC...#....C..#..SS.#",
+      "#.......#.......#.....#",
+      "#.....................#",
+      "#.......#.......#.....#",
+      "#.......#.......#.....#",
+      "#...CC..#..C....#.....#",
+      "##......#.......#....##",
+      "#######################"
+    ],
+    start: p(3, 6),
+    exit: p(20, 8),
+    loot: p(20, 3),
+    bonus: p(18, 9),
+    gates: [gate(8, 6, 5, 3), gate(16, 6, 10, 2, "pulse")],
+    patrol: { from: p(18, 6), to: p(19, 6), look: p(-1, 0), bell: p(10, 8) },
+    par: 4,
+    target: 37
+  };
+  var levels = [first, company, distraction, timing, score];
 
   // src/sim.ts
   var HZ = 60;
@@ -148,13 +267,13 @@
         if (a === this.player) this.cues.push("caught");
       }
     }
-    step(input2) {
+    step(input) {
       if (this.paused || this.won || this.player.caught) return;
-      if (!this.started && !input2) return;
+      if (!this.started && !input) return;
       this.started = true;
-      this.commands.push(input2);
+      this.commands.push(input);
       const inputs = this.tracks.map((t) => t.commands[this.tick] ?? 0);
-      inputs.push(input2);
+      inputs.push(input);
       this.actors.forEach((a, i) => {
         if (!a.caught) this.move(a, inputs[i]);
       });
@@ -171,7 +290,7 @@
         this.doors[i] = open;
       });
       if (!this.player.caught) {
-        if (input2 & USE) {
+        if (input & USE) {
           if (!this.loot && near(this.player, this.level.loot, 205)) {
             this.loot = true;
             this.cues.push("loot");
@@ -185,7 +304,7 @@
           this.cues.push("clear");
         }
       }
-      this.activity.push(this.level.gates.some((g) => near(this.player, g.source, 112)) || !!(this.level.patrol && near(this.player, this.level.patrol.bell)) ? 2 : input2 & USE ? 3 : this.player.walking ? 1 : 0);
+      this.activity.push(this.level.gates.some((g) => near(this.player, g.source, 112)) || !!(this.level.patrol && near(this.player, this.level.patrol.bell)) ? 2 : input & USE ? 3 : this.player.walking ? 1 : 0);
       this.tick++;
       this.elapsed++;
       if (this.tick >= LIMIT && !this.won && !this.player.caught) this.rewind();
@@ -494,8 +613,8 @@
       this.doors = l.gates.map(() => 0);
       surface(new Pixels(this.cache, W, H), l);
     }
-    draw(s2, frame2, reduced) {
-      const g = this.g, l = s2.level, t = reduced ? 0 : frame2;
+    draw(s2, frame2, reduced2) {
+      const g = this.g, l = s2.level, t = reduced2 ? 0 : frame2;
       g.ctx.drawImage(this.cache, 0, 0);
       const ex = pos(l.exit);
       g.rect(ex.x - 10, ex.y - 9, 20, 18, "#102b2c");
@@ -520,7 +639,7 @@
           g.rect(b.x - 12 + j * 4, b.y + 10, 2, 2, amber);
         }
         const goal = s2.doors[i] ? 1 : 0;
-        this.doors[i] = reduced ? goal : this.doors[i] + (goal - this.doors[i]) * 0.3;
+        this.doors[i] = reduced2 ? goal : this.doors[i] + (goal - this.doors[i]) * 0.3;
         const h = Math.round(10 * (1 - this.doors[i]));
         for (const side of [-1, 1]) {
           const y = side === -1 ? b.y - 10 : b.y + 10 - h;
@@ -580,7 +699,7 @@
         g.ctx.globalAlpha = 1;
       });
       if (this.flash > 0) {
-        if (!reduced) {
+        if (!reduced2) {
           g.rect(0, 0, W, H, "rgba(161,140,245," + this.flash * 0.23 + ")");
           for (let j = 0; j < 7; j++) {
             const y = (j * 53 + Math.floor(this.flash * 80)) % H;
@@ -677,48 +796,597 @@
     }
   };
 
-  // src/main.ts
-  var s = new Heist(company);
-  var feed = new Feed(document.querySelector("canvas"), company);
-  var audio = new AudioDeck();
-  var input = 0;
-  var use = 0;
-  var last = performance.now();
-  var clock = new Clock();
-  var keys = { w: UP, a: LEFT, s: DOWN, d: RIGHT, arrowup: UP, arrowdown: DOWN, arrowleft: LEFT, arrowright: RIGHT };
-  onkeydown = (e) => {
-    audio.wake();
-    const k = e.key.toLowerCase();
-    if (k === "m" && !e.repeat) audio.toggle();
-    if (keys[k]) {
-      e.preventDefault();
-      input |= keys[k];
+  // src/skyline.ts
+  function skyline(canvas) {
+    const g = new Pixels(canvas, 900, 117);
+    for (let y = 0; y < 117; y++) g.rect(0, y, 900, 1, "rgb(" + Math.round(14 + y * 0.22) + "," + Math.round(17 + y * 0.07) + "," + Math.round(32 + y * 0.38) + ")");
+    for (let i = 0; i < 170; i++) {
+      const x = noise(i, 1) % 900, y = noise(i, 2) % 95;
+      g.rect(x, y, i % 12 === 0 ? 2 : 1, 1, i % 5 === 0 ? "#ad94cb" : "#675d84");
     }
-    if (e.repeat) return;
-    if (k === "e") use = USE;
-    if (k === "r") s.rewind();
-    if (k === "z") s.undo();
-    if (k === "p") s.paused = !s.paused;
-    if (k === "x") s = new Heist(company);
+    const cx = 681, cy = 44, r = 35;
+    g.glow(cx, cy, 90, "#c28af42a");
+    for (let d = -r; d <= r; d++) {
+      const a = Math.floor(Math.sqrt(r * r - d * d));
+      if (d > 3 && (d % 7 === 0 || d > 16 && d % 7 === 1)) continue;
+      g.rect(cx - a, cy + d, 2 * a + 1, 1, d < -14 ? "#e1c7ee" : d < 2 ? "#cfaaea" : d < 17 ? "#b38ad5" : "#986fb6");
+    }
+    for (let layer = 0; layer < 3; layer++) {
+      let x = -32 + layer * 11;
+      for (let i = 0; x < 920; i++) {
+        const n = noise(i, layer, 9), w = 9 + n % 23, base = 98 + layer * 10;
+        const h = 9 + (n >>> 8) % (23 + layer * 4), y = base - h;
+        const col = ["#302940", "#29263e", "#1c2034"][layer];
+        g.rect(x, y, w, h + 24, col);
+        g.rect(x + 3, y - 3, w - 6, 3, col);
+        if (n % 5 === 0) {
+          g.rect(x + w / 2, y - 12, 1, 12, col);
+          g.rect(x + w / 2, y - 12, 1, 1, "#bd92bb");
+        }
+        for (let j = 2; j < w - 3; j += 4) for (let k = 4; k < h; k += 5) if (noise(i + j, k, layer) % 7 < 3)
+          g.rect(x + j, y + k, 2, 1, ["#65506e", "#725a7d", "#6b7286"][layer]);
+        x += w - 1;
+      }
+    }
+    function tower(x, y, w, h, n) {
+      g.rect(x + 4, y - 3, w - 9, 3, "#45405e");
+      g.rect(x + 8, y - 6, 9, 3, "#27253b");
+      g.rect(x, y, w, h, "#191e31");
+      g.rect(x + 1, y + 1, w - 2, 2, "#63556e");
+      g.rect(x + w - 7, y + 3, 6, h - 3, "#2b2b42");
+      for (let j = 4; j < w - 7; j += 5) for (let k = 6; k < h - 3; k += 6) {
+        const rnd = noise(j + n, k);
+        g.rect(x + j, y + k, 3, 2, rnd % 6 < 3 ? ["#bf8ca0", "#85b2c1", "#b3a0cf"][rnd % 3] : "#34364c");
+      }
+      g.rect(x + 2, y + 6, 1, h - 5, "#40394d");
+    }
+    tower(478, 56, 35, 70, 2);
+    tower(521, 38, 40, 82, 8);
+    tower(576, 66, 54, 62, 4);
+    tower(712, 48, 46, 74, 5);
+    tower(774, 28, 34, 99, 1);
+    tower(830, 52, 48, 77, 7);
+    g.rect(530, 30, 23, 8, "#373249");
+    g.rect(538, 15, 2, 15, "#7b607c");
+    g.rect(537, 14, 4, 2, "#ffabbf");
+    g.rect(780, 18, 22, 10, "#3a334b");
+    g.rect(789, 4, 2, 15, "#65526d");
+    g.rect(788, 3, 4, 2, "#ec9eb6");
+    g.rect(763, 52, 14, 2, "#8c7899");
+    g.rect(763, 74, 14, 2, "#8c7899");
+    g.rect(759, 49, 10, 35, "#191b30");
+    g.rect(760, 50, 8, 33, "#765977");
+    for (let i = 0; i < 4; i++) {
+      g.rect(762, 53 + i * 7, 4, 1, "#edbbcf");
+      g.rect(762 + i % 2, 54 + i * 7, 1, 4, "#edbbcf");
+      g.rect(762, 57 + i * 7, 5, 1, "#edbbcf");
+    }
+    for (let i = 0; i < 112; i++) g.rect(805 + i, 43 + Math.floor(Math.sin(i / 111 * Math.PI) * 9), 1, 1, "#343044");
+    g.rect(653, 100, 95, 3, "#73617e");
+    g.rect(650, 103, 102, 15, "#131a2a");
+    g.rect(849, 92, 56, 2, "#73617e");
+    g.rect(846, 94, 59, 24, "#141b2b");
+    for (let j = 0; j < 31; j++) g.rect(651 + j * 3, 104, 1, 3, "#40405a");
+    g.rect(665, 90, 16, 10, "#37364b");
+    g.rect(664, 89, 18, 2, "#62536c");
+    for (let j = 0; j < 5; j++) g.rect(667 + j * 2, 93, 1, 4, "#1b2432");
+    g.stamp(
+      702,
+      69,
+      [
+        ".......kkk.....",
+        "......kpppk....",
+        ".....kpppppk...",
+        ".....kpmmtmk...",
+        ".....kffffkk...",
+        "......kpplk....",
+        "...kkkkppplk...",
+        ".kkplpppppplk..",
+        "kpppkkppplklk..",
+        "kkkk.kplllk.lk.",
+        "....kppklkk..k.",
+        "...kpppk.lpk...",
+        "..kppkpk..lpk..",
+        "..kk..pk..lpk..",
+        ".....kllk.kllk."
+      ],
+      { k: "#101726", p: "#32334c", l: "#5c526e", m: "#9df4d9", t: "#d3b1b3", f: "#65516a" },
+      2
+    );
+  }
+  function wordmark(canvas) {
+    const g = new Pixels(canvas, 196, 24);
+    const chars = {
+      E: ["1111111", "1100000", "1100000", "1111110", "1100000", "1100000", "1111111"],
+      C: ["0111111", "1100000", "1100000", "1100000", "1100000", "1100000", "0111111"],
+      H: ["1100011", "1100011", "1100011", "1111111", "1100011", "1100011", "1100011"],
+      O: ["0111110", "1100011", "1100011", "1100011", "1100011", "1100011", "0111110"],
+      I: ["11111", "01110", "01110", "01110", "01110", "01110", "11111"],
+      S: ["0111111", "1100000", "1100000", "0111110", "0000011", "0000011", "1111110"],
+      T: ["1111111", "1111111", "0011100", "0011100", "0011100", "0011100", "0011100"]
+    };
+    let x = 4;
+    for (const [i, ch] of [..."ECHO HEIST"].entries()) {
+      if (ch === " ") {
+        x += 7;
+        continue;
+      }
+      const pattern = chars[ch];
+      for (let j = 0; j < pattern.length; j++) for (let k = 0; k < pattern[j].length; k++) if (pattern[j][k] === "1") {
+        const lean = Math.floor((6 - j) / 3);
+        g.rect(x + k * 2 + lean, 5 + j * 2, 2, 5, i < 4 ? "#28685f" : "#57436e");
+      }
+      for (let j = 0; j < pattern.length; j++) for (let k = 0; k < pattern[j].length; k++) if (pattern[j][k] === "1") {
+        const lean = Math.floor((6 - j) / 3);
+        g.rect(x + k * 2 + lean, 3 + j * 2, 2, 2, i < 4 ? j < 4 ? "#a6ffe1" : "#79e8c4" : j < 4 ? "#e0c7fd" : "#baa0e5");
+      }
+      x += pattern[0].length * 2 + 3;
+    }
+    const cut = g.ctx.getImageData(0, 0, x + 1, 23);
+    canvas.width = x + 1;
+    canvas.height = 23;
+    g.ctx.putImageData(cut, 0, 0);
+  }
+
+  // src/ui.ts
+  var el = (id) => document.getElementById(id);
+  var digits = (n) => String(n).padStart(2, "0");
+  var paths = {
+    arcade: "M2 12 8 3h4l-6 9zm8 0 6-9h4l-6 9zm-8 4h14",
+    keys: "M2 5h16v10H2z M5 8h1m2 0h1m2 0h1m2 0h1M5 12h2m2 0h5",
+    sound: "M2 8h4l5-4v12l-5-4H2z M14 7q3 3 0 6m2-9q6 6 0 12",
+    mute: "M2 8h4l5-4v12l-5-4H2z M14 7l5 6m0-6-5 6",
+    pause: "M6 4h2v12H6zm7 0h2v12h-2z",
+    play: "M5 3l11 7-11 7z",
+    timer: "M7 2h6m-3 0v2m5 1 2-2 M15 6l2 3v5l-3 3H7l-4-4V9l3-4h7z M10 7v4h3",
+    loop: "M3 9a7 7 0 1 1 1 6M2 4v6h6",
+    echo: "M2 15V7l3-3h5l3 3v8l-3-2-2 2-3-2z M13 4h2l3 3v9l-3-2 M5 8h1m2 0h1",
+    signal: "M2 16v-3m4 3v-6m4 6V7m4 9V4m4 12V1",
+    prompt: "m3 5 5 5-5 5m7 0h6",
+    wave: "M1 11h3l2-6 3 11 3-14 2 9h5",
+    folder: "M2 5h6l2 2h8v10H2z M2 9h16",
+    gem: "M2 7l4-4h8l4 4-8 10zM2 7h16M7 7l3 10 3-10-3-4z",
+    shard: "m10 2 6 8-6 8-6-8z",
+    bulb: "M7 13v-2L5 9V6l3-3h4l3 3v3l-2 2v2zm1 3h4",
+    stack: "m2 6 8-4 8 4-8 4zm0 4 8 4 8-4m-16 4 8 4 8-4",
+    rewind: "M10 4 2 10l8 6zm8 0-8 6 8 6z",
+    undo: "M3 4v6h6M3 10l4-4h5l4 3v4l-3 3H8",
+    restart: "M16 4v5h-5m5 0-3-4H7L3 9v4l4 3h5l3-2"
   };
-  onkeyup = (e) => {
-    input &= ~(keys[e.key.toLowerCase()] || 0);
-  };
-  function frame(t) {
-    clock.advance((t - last) / 1e3, () => {
-      s.step(input | use);
-      use = 0;
+  function icon(name) {
+    return '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="' + paths[name] + '"/></svg>';
+  }
+  function icons(root = document) {
+    root.querySelectorAll("[data-icon]").forEach((i) => {
+      i.innerHTML = icon(i.dataset.icon);
     });
-    last = t;
+  }
+  function text(id, value) {
+    const node = el(id);
+    if (node.textContent !== value) node.textContent = value;
+  }
+  var Timeline = class {
+    constructor() {
+      __publicField(this, "count", -1);
+      __publicField(this, "lastTick", -1);
+    }
+    draw(s2) {
+      const rebuild = this.count !== s2.tracks.length;
+      if (rebuild) {
+        this.count = s2.tracks.length;
+        el("lanes").replaceChildren();
+        for (let i = 0; i <= this.count; i++) {
+          const row = document.createElement("div");
+          row.className = "lane";
+          const live = i === this.count, label = live ? "You" : "Echo " + (i + 1), col = live ? "#87e9c8" : ECHO_COLORS[i % ECHO_COLORS.length];
+          row.style.setProperty("--col", col);
+          const name = document.createElement("span");
+          name.textContent = label;
+          const cv = document.createElement("canvas");
+          cv.width = 600;
+          cv.height = 10;
+          cv.className = "tape";
+          cv.setAttribute("aria-label", label + " recording timeline");
+          row.append(name, cv);
+          el("lanes").append(row);
+        }
+      }
+      if (!rebuild && this.lastTick === s2.tick) return;
+      this.lastTick = s2.tick;
+      const bars = el("lanes").querySelectorAll("canvas");
+      bars.forEach((cv, i) => {
+        const g = cv.getContext("2d"), live = i === s2.tracks.length, color = live ? "#87e9c8" : ECHO_COLORS[i % ECHO_COLORS.length];
+        g.clearRect(0, 0, 600, 10);
+        g.fillStyle = "#2c3545";
+        for (let x = 0; x < 600; x += 10) g.fillRect(x, 0, 1, x % 100 ? 3 : 10);
+        const a = live ? s2.activity : s2.tracks[i].activity;
+        g.fillStyle = color;
+        for (let n = 0; n < a.length; n += 3) {
+          const v = Math.max(a[n], a[n + 1] || 0, a[n + 2] || 0), h = [2, 4, 8, 10][v];
+          g.fillRect(n / 3, 10 - h, 1, h);
+        }
+        if (!live && a.at(-1) === 2) {
+          g.globalAlpha = 0.32;
+          for (let x = Math.ceil(a.length / 3); x < 600; x += 5) g.fillRect(x, 5, 3, 3);
+          g.globalAlpha = 1;
+        }
+        g.fillStyle = "#f3f7fe";
+        g.fillRect(Math.min(599, 600 * s2.tick / LIMIT), 0, 2, 10);
+      });
+    }
+  };
+
+  // src/save.ts
+  var key = "echo-heist.v1";
+  function readSave() {
+    const fallback = { selected: 0, muted: false, records: {} };
+    try {
+      const data = JSON.parse(localStorage.getItem(key) || "null");
+      if (!data || typeof data !== "object") return fallback;
+      if (Number.isInteger(data.selected) && data.selected >= 0 && data.selected < 5) fallback.selected = data.selected;
+      fallback.muted = data.muted === true;
+      for (const [k, r] of Object.entries(data.records || {})) {
+        if (r && Number.isInteger(r.loops) && r.loops > 0 && Number.isInteger(r.ticks) && r.ticks > 0 && [1, 2, 3].includes(r.medal) && typeof r.bonus === "boolean") fallback.records[Number(k)] = r;
+      }
+    } catch {
+    }
+    return fallback;
+  }
+  function writeSave(s2) {
+    try {
+      localStorage.setItem(key, JSON.stringify(s2));
+    } catch {
+    }
+  }
+  function result(s2) {
+    const efficient = s2.attempts <= s2.level.par, fast = s2.elapsed <= s2.level.target * 60;
+    return { loops: s2.attempts, ticks: s2.elapsed, bonus: s2.bonus, medal: efficient && fast && s2.bonus ? 3 : efficient || fast ? 2 : 1 };
+  }
+  function better(a, b) {
+    return !b || a.medal > b.medal || a.medal === b.medal && (a.loops < b.loops || a.loops === b.loops && a.ticks < b.ticks);
+  }
+  var medals = ["", "Bronze", "Silver", "Gold"];
+
+  // src/main.ts
+  var save = readSave();
+  var audio = new AudioDeck();
+  var clock = new Clock();
+  var timeline = new Timeline();
+  audio.muted = save.muted;
+  var index = save.selected;
+  var s = new Heist(levels[index]);
+  var board = el("board");
+  var feed = new Feed(board, s.level);
+  var dialog = el("dialog");
+  var keys = /* @__PURE__ */ new Map();
+  var reduced = matchMedia("(prefers-reduced-motion: reduce)");
+  var queued = 0;
+  var thumb = 0;
+  var last = performance.now();
+  var frameCount = 0;
+  var previousPause = false;
+  var notice = "";
+  var noticeUntil = 0;
+  var overlayMode = "";
+  var newRecord = false;
+  var moveKeys = { KeyW: UP, ArrowUp: UP, KeyA: LEFT, ArrowLeft: LEFT, KeyS: DOWN, ArrowDown: DOWN, KeyD: RIGHT, ArrowRight: RIGHT };
+  skyline(el("sky"));
+  wordmark(el("logo"));
+  icons();
+  function clearInput() {
+    keys.clear();
+    thumb = queued = 0;
+    clock.clear();
+  }
+  function say(value, seconds = 2.5) {
+    notice = value;
+    noticeUntil = performance.now() + seconds * 1e3;
+  }
+  function soundButton() {
+    el("audio").innerHTML = "<i>" + icon(audio.muted ? "mute" : "sound") + "</i><span>Sound " + (audio.muted ? "off" : "on") + "</span>";
+    el("audio").setAttribute("aria-pressed", String(!audio.muted));
+  }
+  function mute() {
+    audio.wake();
+    audio.toggle();
+    save.muted = audio.muted;
+    writeSave(save);
+    soundButton();
+  }
+  function jobs() {
+    const list = el("jobs");
+    list.replaceChildren();
+    levels.forEach((l, i) => {
+      const b = document.createElement("button"), rec = save.records[i];
+      b.className = "job" + (i === index ? " active" : "");
+      b.setAttribute("aria-current", i === index ? "true" : "false");
+      b.innerHTML = '<span class="idx">' + digits(i + 1) + '</span><span class="jname">' + l.title + '</span><span class="mark">' + (rec ? "\u25C6" : i === index ? "\u25C2" : "\xB7") + "</span>";
+      if (rec) b.title = medals[rec.medal] + " \xB7 " + rec.loops + " loops \xB7 " + (rec.ticks / 60).toFixed(2) + "s";
+      b.onclick = () => {
+        if (i !== index) switchTo(i);
+      };
+      list.append(b);
+    });
+    text("completed", Object.keys(save.records).length + " / 5");
+  }
+  function switchTo(i) {
+    index = i;
+    s = new Heist(levels[i]);
+    feed.setLevel(s.level);
+    feed.flash = 0;
+    feed.endGlow = 0;
+    timeline.count = -1;
+    clearInput();
+    last = performance.now();
+    notice = "";
+    overlayMode = "";
+    newRecord = false;
+    el("overlay").hidden = true;
+    el("hinttext").hidden = true;
+    save.selected = i;
+    writeSave(save);
+    text("facility", s.level.site);
+    text("cam", digits(i + 1));
+    text("filecode", "EH\u2013" + digits(i + 1));
+    text("contract", "Contract " + digits(i + 1) + " / 05");
+    text("title", s.level.title);
+    text("brief", s.level.brief);
+    text("item", s.level.item);
+    text("hinttext", s.level.hint);
+    hintLabel();
+    jobs();
+    hud();
+  }
+  function hintLabel() {
+    const show = !el("hinttext").hidden;
+    el("hint").innerHTML = "<span><i>" + icon("bulb") + "</i>" + (show ? "Hide hint" : "Show hint") + "</span><b>" + (show ? "\u2212" : "+") + "</b>";
+    el("hint").setAttribute("aria-expanded", String(show));
+  }
+  function contextual() {
+    if (s.won) return "Extraction confirmed. Receipt filed under your alias.";
+    if (s.player.caught) return "Sentry contact. Retry this loop or rewind to keep its recording.";
+    if (s.paused) return "Timeline suspended. Your crew is waiting.";
+    if (near(s.player, s.level.loot, 205) && !s.loot) return "Press E to steal the " + s.level.item.toLowerCase() + ".";
+    if (near(s.player, s.level.bonus, 190) && !s.bonus) return "Press E to pocket the violet bonus intel.";
+    const g = s.level.gates.find((g2) => near(s.player, g2.source, 140));
+    if (g) return g.kind === "pulse" ? "Tap E to send a 2.5-second pulse. Rewind to replay it." : "Pad engaged. Press R here to leave an Echo holding it.";
+    if (s.level.patrol && near(s.player, s.level.patrol.bell)) return "Buzzer active. Rewind here to keep the sentry distracted.";
+    if (s.loot) return "Loot secured. Reach the green EXIT pad.";
+    if (!s.started && s.tracks.length) return "Echoes synced. Move or press Space to start the crew.";
+    if (index === 0 && !s.tracks.length) return "Move to PAD A with WASD or the arrow keys.";
+    if (index === 0) return "Follow your Echo through the door. Press E at the gold core.";
+    return s.level.brief;
+  }
+  function overlay() {
+    const mode = s.won ? "won" : s.player.caught ? "caught" : s.paused && !dialog.open ? "paused" : "";
+    if (mode === overlayMode) return;
+    overlayMode = mode;
+    const o = el("overlay");
+    o.hidden = !mode;
+    if (!mode) return;
+    if (mode === "won") {
+      const r = result(s), best = save.records[index], final = index === levels.length - 1;
+      o.innerHTML = '<div class="seal">\u25C6</div><div class="eyebrow">' + (final ? "Blackstar recovered" : "Extraction confirmed") + "</div><h3>" + (final ? "The Big Score is yours." : "Clean getaway.") + "</h3><p>" + s.level.quip + '</p><div class="receipt">' + medals[r.medal] + " medal \xB7 " + r.loops + " loops \xB7 " + (r.ticks / 60).toFixed(2) + 's</div><div class="scoreline">' + (newRecord ? "Personal best" : "Best " + medals[best.medal] + " \xB7 " + best.loops + " loops \xB7 " + (best.ticks / 60).toFixed(2) + "s") + " \xB7 Intel " + (r.bonus ? "secured" : "missed") + '</div><div class="choices"><button class="primary" id="next">' + (final ? "Back to first contract" : "Next contract \u2192") + '</button><button id="replay">Replay</button></div>';
+      el("next").onclick = () => switchTo((index + 1) % levels.length);
+      el("replay").onclick = () => switchTo(index);
+    } else if (mode === "caught") {
+      o.innerHTML = '<div class="eyebrow">Security alert</div><h3>Cover blown.</h3><p>Your earlier Echoes are still on tape.</p><div class="choices"><button class="primary" id="retryNow">Retry loop <kbd>T</kbd></button><button id="keep">Keep Echo <kbd>R</kbd></button></div>';
+      el("retryNow").onclick = () => action("retry");
+      el("keep").onclick = () => action("rewind");
+    } else {
+      o.innerHTML = '<div class="eyebrow">Timeline on hold</div><h3>Paused</h3><button class="primary" id="resume">Resume <kbd>P</kbd></button>';
+      el("resume").onclick = pause;
+    }
+  }
+  function hud() {
+    const hundredths = Math.ceil((LIMIT - s.tick) * 100 / 60);
+    const value = "00:" + digits(Math.floor(hundredths / 100)) + "<span>." + digits(hundredths % 100) + "</span>";
+    if (el("time").innerHTML !== value) el("time").innerHTML = value;
+    text("loop", digits(s.tracks.length + 1));
+    text("echoes", digits(s.tracks.length));
+    text("looted", s.loot ? "\u2713" : "");
+    text("bonus", s.bonus ? "Secured \u2713" : "Optional");
+    const rec = s.paused ? "Paused" : s.won ? "Archived" : s.player.caught ? "Stopped" : s.started ? "Recording" : "Standby";
+    text("rec", rec);
+    el("rec").parentElement.classList.toggle("live", rec === "Recording");
+    el("undo").disabled = !s.tracks.length || s.won || s.paused;
+    el("rewind").disabled = s.paused || s.won;
+    const pauseButton = el("pause");
+    pauseButton.disabled = s.won || s.player.caught;
+    const state = s.paused ? "Resume" : "Pause";
+    if (pauseButton.querySelector("span")?.textContent !== state) pauseButton.innerHTML = "<i>" + icon(s.paused ? "play" : "pause") + "</i><span>" + state + "</span>";
+    pauseButton.setAttribute("aria-label", state + " game");
+    text("status", performance.now() < noticeUntil && notice ? notice : contextual());
+    timeline.draw(s);
+    overlay();
+  }
+  function action(a) {
+    audio.wake();
+    if (dialog.open) return;
+    if (a === "restart") {
+      switchTo(index);
+      say("Contract reset. Fresh tape.");
+      return;
+    }
+    if (s.paused || s.won) return;
+    if (a === "rewind" && !s.tick) {
+      say("Move first to record a route.");
+      return;
+    }
+    clearInput();
+    if (a === "rewind") s.rewind();
+    if (a === "undo") s.undo();
+    if (a === "retry") s.retry();
+    effects();
+    hud();
+  }
+  function pause() {
+    if (s.won || s.player.caught || dialog.open) return;
+    audio.wake();
+    clearInput();
+    s.paused = !s.paused;
+    notice = "";
+    last = performance.now();
+    hud();
+  }
+  function help() {
+    if (dialog.open) return;
+    previousPause = s.paused;
+    s.paused = true;
+    clearInput();
+    el("dialog-content").innerHTML = '<div class="eyebrow">Operator handbook</div><h3>Work with your past.</h3><p>Rewind to keep the route you just ran. Each Echo starts with you, repeats its inputs, then waits where its tape ends.</p><dl><dt>WASD / Arrows</dt><dd>Move</dd><dt>E</dt><dd>Take loot or intel, pulse a relay</dd><dt>R / Z</dt><dd>Record an Echo / undo the last Echo</dd><dt>T / X</dt><dd>Retry with your crew / restart contract</dd><dt>Space</dt><dd>Start the clock while standing still</dd><dt>P / Esc</dt><dd>Pause or resume</dd><dt>M</dt><dd>Toggle audio</dd></dl><p>Gold requires bonus intel, at most ' + s.level.par + " loops and a total time of " + s.level.target + 's or less on this contract.</p><button class="primary" id="dismiss">Back to the heist</button>';
+    dialog.showModal();
+    el("dismiss").onclick = () => dialog.close();
+    hud();
+  }
+  dialog.addEventListener("close", () => {
+    s.paused = previousPause;
+    clearInput();
+    last = performance.now();
+    hud();
+    board.focus({ preventScroll: true });
+  });
+  function effects() {
     for (const cue of s.cues.splice(0)) {
       audio.effect(cue);
-      if (["rewind", "undo"].includes(cue)) feed.flash = 1;
+      if (cue === "rewind" || cue === "retry" || cue === "undo") {
+        feed.flash = 1;
+        feed.doors.fill(0);
+        timeline.lastTick = -1;
+        say(cue === "rewind" ? "Echo " + digits(s.tracks.length) + " recorded. Move to run the tape." : cue === "undo" ? "Last Echo erased. Remaining tapes are ready." : "Loop reset. Your crew is ready.", 2);
+      }
+      if (cue === "loot" || cue === "bonus") {
+        feed.endGlow = 1;
+        say(cue === "loot" ? "Loot secured. Move to the green EXIT pad." : "Bonus intel secured.");
+      }
+      if (cue === "clear") {
+        const r = result(s);
+        newRecord = better(r, save.records[index]);
+        if (newRecord) save.records[index] = r;
+        writeSave(save);
+        jobs();
+        notice = "";
+      }
+      if (cue === "caught") notice = "";
+      if (cue === "empty") say("Use E beside loot, violet intel or a pulse relay.", 1);
     }
-    audio.active = s.started && !s.paused && !s.won;
+  }
+  el("restart").onclick = () => action("restart");
+  el("rewind").onclick = () => action("rewind");
+  el("undo").onclick = () => action("undo");
+  el("hint").onclick = () => {
+    el("hinttext").hidden = !el("hinttext").hidden;
+    hintLabel();
+  };
+  el("help").onclick = help;
+  el("audio").onclick = mute;
+  el("pause").onclick = pause;
+  function canRun() {
+    return !dialog.open && !s.paused && !s.won && !s.player.caught;
+  }
+  window.addEventListener("keydown", (e) => {
+    if (dialog.open || e.metaKey || e.ctrlKey || e.altKey) return;
+    const move = moveKeys[e.code];
+    if (move) {
+      e.preventDefault();
+      if (canRun() && !e.repeat) {
+        audio.wake();
+        keys.set(e.code, move);
+        queued |= move;
+      }
+      return;
+    }
+    if (e.code === "Space" && e.target instanceof HTMLButtonElement) return;
+    if (!["Space", "KeyE", "KeyR", "KeyZ", "KeyT", "KeyX", "KeyP", "Escape", "KeyM", "KeyH"].includes(e.code)) return;
+    e.preventDefault();
+    if (e.repeat) return;
+    audio.wake();
+    switch (e.code) {
+      case "KeyE":
+        if (canRun()) queued |= USE;
+        break;
+      case "Space":
+        if (canRun()) s.started = true;
+        break;
+      case "KeyR":
+        action("rewind");
+        break;
+      case "KeyZ":
+        action("undo");
+        break;
+      case "KeyT":
+        action("retry");
+        break;
+      case "KeyX":
+        action("restart");
+        break;
+      case "KeyP":
+      case "Escape":
+        pause();
+        break;
+      case "KeyM":
+        mute();
+        break;
+      case "KeyH":
+        help();
+        break;
+    }
+  });
+  window.addEventListener("keyup", (e) => keys.delete(e.code));
+  function background() {
+    clearInput();
+    if (s.started && canRun()) {
+      s.paused = true;
+      notice = "";
+      hud();
+    }
+    last = performance.now();
+  }
+  window.addEventListener("blur", background);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) background();
+    else last = performance.now();
+  });
+  document.querySelectorAll("[data-dir]").forEach((b) => {
+    const dir = Number(b.dataset.dir);
+    b.onpointerdown = (e) => {
+      if (!canRun()) return;
+      e.preventDefault();
+      b.setPointerCapture(e.pointerId);
+      audio.wake();
+      thumb |= dir;
+      queued |= dir;
+    };
+    b.onlostpointercapture = b.onpointercancel = b.onpointerup = () => {
+      thumb &= ~dir;
+    };
+  });
+  el("touch-use").onclick = () => {
+    if (canRun()) {
+      audio.wake();
+      queued |= USE;
+    }
+  };
+  function frame(t) {
+    const delta = Math.max(0, (t - last) / 1e3);
+    last = t;
+    if (canRun() && !document.hidden) {
+      let held = thumb;
+      for (const mask of keys.values()) held |= mask;
+      clock.advance(delta, () => {
+        s.step(held | queued);
+        queued = 0;
+        effects();
+      });
+    }
+    if (!s.paused && !document.hidden) frameCount += delta * 60;
+    audio.active = s.started && canRun() && !document.hidden;
     audio.music();
-    feed.draw(s, t * 0.06, false);
-    document.querySelector("#info").textContent = s.won ? "ESCAPED" : "Loop " + (s.tracks.length + 1) + " | " + ((1800 - s.tick) / 60).toFixed(1) + " seconds" + (s.paused ? " | PAUSED" : "");
+    feed.draw(s, frameCount, reduced.matches);
+    hud();
     requestAnimationFrame(frame);
   }
+  soundButton();
+  switchTo(index);
   requestAnimationFrame(frame);
 })();
